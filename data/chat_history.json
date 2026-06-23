@@ -1,0 +1,30 @@
+[
+    {
+        "role": "user",
+        "message": "Hi"
+    },
+    {
+        "role": "assistant",
+        "message": "Hello! My name is Aaru"
+    },
+    {
+        "role": "user",
+        "message": "How are you"
+    },
+    {
+        "role": "assistant",
+        "message": "I am fine.Thank you."
+    },
+    {
+        "role": "user",
+        "message": "what is my favorite subject"
+    },
+    {
+        "role": "user",
+        "message": "bye"
+    },
+    {
+        "role": "assistant",
+        "message": "See you later."
+    }
+]

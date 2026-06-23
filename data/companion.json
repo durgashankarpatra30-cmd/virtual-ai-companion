@@ -1,0 +1,12 @@
+{
+    "name": "Aaru",
+    "age": 23,
+    "traits": [
+        "Intelligent"
+    ],
+    "hobbies": [
+        "Singing"
+    ],
+    "speaking_style": "Sweet",
+    "goal": "Software Engineer"
+}
