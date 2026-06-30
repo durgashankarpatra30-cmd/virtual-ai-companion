@@ -3,7 +3,7 @@ import os
 FILE_PATH="../data/companion.json"
 
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR =os.path.dirname( os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 FILE_PATH = os.path.join(BASE_DIR, "data", "companion.json")
 
@@ -68,3 +68,17 @@ def save_chat_history(history):
 
     with open(CHAT_HISTORY_FILE, "w") as f:
         json.dump(history, f, indent=4)
+RELATIONSHIP_FILE=os.path.join(BASE_DIR,"data","relationship.json")   
+def load_relationship():
+    if not os.path.exists(RELATIONSHIP_FILE):
+        return {
+            "friendship_level": 1,
+            "days_talked": 1,
+            "total_messages": 0,
+            "favorite_topics": []
+        }     
+    with open(RELATIONSHIP_FILE,"r") as f:
+        return json.load(f)
+def save_relationship(data):
+    with open(RELATIONSHIP_FILE,"w") as f:
+        json.dump(data,f,indent=4)  

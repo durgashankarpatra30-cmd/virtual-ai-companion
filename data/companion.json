@@ -1,12 +1,15 @@
 {
-    "name": "Aaru",
-    "age": 23,
+    "name": "Nia",
+    "age": 28,
     "traits": [
-        "Intelligent"
+        "Intelligent",
+        "Kind",
+        "Charming"
     ],
     "hobbies": [
-        "Singing"
+        "Singig",
+        "Dancing"
     ],
-    "speaking_style": "Sweet",
-    "goal": "Software Engineer"
+    "speaking_style": "kind",
+    "goal": "doctor"
 }

@@ -1,17 +1,26 @@
-from companion import Companion
-from memory import save_companion,load_companion
-saved_data = load_companion()
-from memory import (
+from models.companion import Companion
+from Memory.memory import save_companion,load_companion
+from Ai.ai_engine import build_prompt,generate_ai_message
+from Memory.memory import (
     save_companion,
     load_companion,
     save_user_memory,
     load_user_memory,
     save_chat_history,
-    load_chat_history
+    load_chat_history,
+    load_relationship,
+    save_relationship
 )
-
+from Memory.memory_manager import should_save_memory,extract_memory
+from Memory.relationship_manager import update_relationship
+from chat_service import process_message
+saved_data=load_companion()
 user_memory = load_user_memory()
 chat_history=load_chat_history()
+relationship=load_relationship()
+
+            
+
 
 if saved_data:
 
@@ -51,6 +60,18 @@ if saved_data:
     goal
 )
         save_companion(companion)
+        chat_history = []
+        save_chat_history(chat_history)
+
+        user_memory = {}
+        save_user_memory(user_memory)
+
+        relationship = {
+    "friendship_level": 0,
+    "current_mood": "neutral",
+    "message_count": 0
+}
+        save_relationship(relationship)
         print("\n===== COMPANION CREATED =====")
         print("Name:", companion.name)
         print("Age:", companion.age)
@@ -60,51 +81,17 @@ if saved_data:
         print("Goal:", companion.goal)
 
 while True:
-
+#Normal Chat
     user_message = input("\nYou: ")
-    chat_history.append({
-        "role":"user",
-        "message":user_message
-    })
-
-    if user_message.lower() == "exit":
-        print("Good bye")
-        break
-
-    # MEMORY SAVE
-    if "my favorite subject is" in user_message.lower():
-
-        subject = user_message.split("is")[-1].strip()
-
-        user_memory["favorite_subject"] = subject
-
-        save_user_memory(user_memory)
-
-        print(f"{companion.name}: I'll remember that.")
-
-        continue
-
-    # MEMORY RECALL
-    if "what is my favorite subject" in user_message.lower():
-
-        subject = user_memory.get(
-            "favorite_subject",
-            "I don't know yet."
-        )
-
-        print(
-            f"{companion.name}: Your favorite subject is {subject}"
-        )
-
-        continue
-
-    # NORMAL CHAT
-    response = companion.generate_message(user_message)
+    if user_message.lower()=="exit":
+       
+      print("Good Bye")
+      break
+    
+        
+    response = process_message(user_message)
 
     print(f"{companion.name}: {response}")
-    chat_history.append({
-        "role":"assistant",
-        "message":response
 
-    })
-    save_chat_history(chat_history)
+    
+    
