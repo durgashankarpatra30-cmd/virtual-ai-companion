@@ -1,0 +1,330 @@
+/* Whole message container */
+.message {
+    display: flex;
+    flex-direction: column;
+    margin: 16px 0;
+    animation: fadeIn 0.3s ease;
+}
+
+/* AI Messages */
+.assistant {
+    align-items: flex-start;
+}
+
+/* User Messages */
+.user {
+    align-items: flex-end;
+    padding-right: 15px;
+}
+
+/* Message Header */
+.message-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 6px;
+    width: 100%;
+    max-width: 65%;
+}
+
+.assistant .message-header {
+    justify-content: flex-start;
+}
+
+.user .message-header {
+    justify-content: flex-end;
+}
+
+/* Sender Name */
+.message-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.voice-badge {
+    font-size: 11px;
+    background: rgba(139, 92, 246, 0.25);
+    color: #c4b5fd;
+    padding: 2px 7px;
+    border-radius: 8px;
+    font-weight: 500;
+}
+
+.message-header-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Message Time */
+.message-time {
+    font-size: 11px;
+    color: #64748b;
+}
+
+/* Read aloud speaker button */
+.speak-icon-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 2px 4px;
+    border-radius: 6px;
+    color: #94a3b8;
+    transition: 0.2s;
+}
+
+.speak-icon-btn:hover {
+    color: #a78bfa;
+    transform: scale(1.15);
+}
+
+.speak-icon-btn.playing {
+    color: #38bdf8;
+    animation: speakerPulse 1s infinite alternate;
+}
+
+/* Chat Bubble */
+.message-bubble {
+    max-width: 65%;
+    padding: 14px 18px;
+    border-radius: 20px;
+    font-size: 15px;
+    line-height: 1.6;
+    word-break: break-word;
+    transition: 0.25s;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* AI Bubble */
+.assistant .message-bubble {
+    background: #1e293b;
+    color: #f1f5f9;
+    border-bottom-left-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* User Bubble */
+.user .message-bubble {
+    background: linear-gradient(135deg, #7c3aed, #4f46e5);
+    color: white;
+    border-bottom-right-radius: 6px;
+    box-shadow: 0 4px 14px rgba(124, 58, 237, 0.3);
+}
+
+/* Hover Animation */
+.message-bubble:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+}
+
+/* In-Chat Audio Player */
+.message-audio-player {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 14px;
+    padding: 8px 14px;
+    margin-bottom: 4px;
+    backdrop-filter: blur(8px);
+    transition: 0.2s;
+}
+
+.user .message-audio-player {
+    background: rgba(0, 0, 0, 0.25);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.message-audio-player.is-playing {
+    border-color: rgba(139, 92, 246, 0.5);
+    box-shadow: 0 0 16px rgba(139, 92, 246, 0.25);
+}
+
+.audio-play-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #8b5cf6, #6366f1);
+    color: white;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: transform 0.2s;
+}
+
+.audio-play-btn:hover {
+    transform: scale(1.1);
+}
+
+.audio-wave-visualizer {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    height: 24px;
+    flex: 1;
+    min-width: 80px;
+}
+
+.audio-bar {
+    width: 3px;
+    background: #94a3b8;
+    border-radius: 2px;
+    transition: height 0.1s ease;
+}
+
+.message-audio-player.is-playing .audio-bar {
+    background: linear-gradient(180deg, #ec4899, #8b5cf6);
+}
+
+.audio-bar.animating {
+    animation: barBounce 0.6s infinite ease-in-out alternate;
+}
+
+.audio-info {
+    font-size: 12px;
+    color: #cbd5e1;
+    font-family: monospace;
+    flex-shrink: 0;
+}
+
+.audio-speed-btn {
+    padding: 3px 7px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #cbd5e1;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 6px;
+    font-size: 11px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: 0.2s;
+}
+
+.audio-speed-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+/* Attached Image in Message */
+.message-image-wrap {
+    position: relative;
+    border-radius: 14px;
+    overflow: hidden;
+    cursor: pointer;
+    max-width: 320px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.message-attached-img {
+    width: 100%;
+    max-height: 260px;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.3s ease;
+}
+
+.message-image-wrap:hover .message-attached-img {
+    transform: scale(1.04);
+}
+
+.img-overlay-badge {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    background: rgba(0, 0, 0, 0.65);
+    color: white;
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 12px;
+    backdrop-filter: blur(4px);
+}
+
+.message-text {
+    word-break: break-word;
+}
+
+/* In-Chat Lightbox */
+.chat-img-lightbox {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(8px);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    animation: fadeIn 0.2s ease;
+}
+
+.chat-lightbox-inner {
+    position: relative;
+    max-width: 90%;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.chat-lightbox-inner img {
+    max-width: 100%;
+    max-height: 75vh;
+    object-fit: contain;
+    border-radius: 14px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+}
+
+.chat-lightbox-close {
+    position: absolute;
+    top: -40px;
+    right: 0;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.chat-lightbox-download {
+    padding: 9px 18px;
+    background: #4f46e5;
+    color: white;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 10px;
+    transition: 0.2s;
+}
+
+.chat-lightbox-download:hover {
+    background: #4338ca;
+}
+
+@keyframes barBounce {
+    0% { transform: scaleY(0.4); }
+    100% { transform: scaleY(1.3); }
+}
+
+@keyframes speakerPulse {
+    from { opacity: 0.7; transform: scale(1); }
+    to { opacity: 1; transform: scale(1.2); }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}

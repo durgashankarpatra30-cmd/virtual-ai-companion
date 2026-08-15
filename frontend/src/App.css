@@ -1,0 +1,33 @@
+.app{
+    width:100%;
+    height:100vh;
+
+    display:flex;
+    flex-direction:column;
+}
+
+.chat-container{
+    flex:1;
+
+    display:flex;
+    flex-direction:column;
+
+    justify-content:space-between;
+
+    padding:20px;
+}
+
+.messages{
+    flex:1;
+    overflow-y:auto;
+}
+
+.input-area{
+    display:flex;
+    gap:10px;
+}
+
+.input-area input{
+    flex:1;
+    padding:12px;
+}

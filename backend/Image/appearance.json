@@ -1,0 +1,31 @@
+{
+    "name": "Maya",
+    "gender": "Female",
+    "age": 20,
+    "height": "165 cm",
+    "body_type": "Slim",
+    "skin_tone": "Fair",
+    "hair": {
+        "color": "Black",
+        "style": "Long Straight",
+        "length": "Long"
+    },
+    "eyes": {
+        "color": "Deep Brown",
+        "shape": "Expressive"
+    },
+    "face": {
+        "face_shape": "Soft Oval",
+        "expression": "Gentle Smile"
+    },
+    "clothing": {
+        "top": "Cozy Oversized Hoodie & Jeans",
+        "bottom": "Comfortable jeans",
+        "shoes": "Casual sneakers"
+    },
+    "accessories": [
+        "Silver Necklace"
+    ],
+    "art_style": "Realistic and Human Style ",
+    "default_background": "Modern Cozy Bedroom"
+}

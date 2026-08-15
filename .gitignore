@@ -1,0 +1,30 @@
+# Environment variables and secrets
+.env
+.env.local
+*.env
+gemini.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+venv/
+.venv/
+env/
+ENV/
+
+# Node / Frontend
+node_modules/
+frontend/node_modules/
+dist/
+frontend/dist/
+*.local
+
+# Temporary / OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+backend/test_audio.mp3
+backend/test_image_prompt.py

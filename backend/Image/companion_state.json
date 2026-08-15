@@ -1,0 +1,29 @@
+{
+    "status": "Online",
+
+    "mood": "Happy",
+
+    "emotion": "Cheerful",
+
+    "activity": "Reading",
+
+    "location": "Bedroom",
+
+    "time_of_day": "Morning",
+
+    "weather": "Sunny",
+
+    "energy": 92,
+
+    "outfit": "Default",
+
+    "pose": "Sitting",
+
+    "camera_view": "Medium Shot",
+
+    "holding": [
+        "Book"
+    ],
+
+    "expression": "Smiling"
+}

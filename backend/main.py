@@ -69,7 +69,7 @@ if saved_data:
         relationship = {
     "friendship_level": 0,
     "current_mood": "neutral",
-    "message_count": 0
+    "total_messages": 0
 }
         save_relationship(relationship)
         print("\n===== COMPANION CREATED =====")
@@ -89,9 +89,11 @@ while True:
       break
     
         
-    response = process_message(user_message)
-
-    print(f"{companion.name}: {response}")
+    result = process_message(user_message)
+    reply_text = result["reply"] if isinstance(result, dict) else result
+    print(f"{companion.name}: {reply_text}")
+    if isinstance(result, dict) and result.get("image"):
+        print(f"[{companion.name} sent an image: {result['image']}]")
 
     
     

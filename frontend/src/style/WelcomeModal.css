@@ -1,0 +1,670 @@
+/* Welcome Modal Overlay */
+.welcome-modal-overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: radial-gradient(circle at center, rgba(17, 24, 39, 0.95), rgba(7, 10, 20, 0.98));
+    backdrop-filter: blur(16px);
+    z-index: 1300;
+    padding: 24px;
+    overflow-y: auto;
+    animation: fadeIn 0.3s ease;
+}
+
+/* Modal Card */
+.welcome-modal-card {
+    width: 820px;
+    max-width: 96%;
+    max-height: 90vh;
+    background: #111827;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 26px;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.7), 0 0 50px rgba(124, 58, 237, 0.25);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    color: #F8FAFC;
+    position: relative;
+    animation: slideUp 0.35s ease;
+}
+
+.welcome-close-btn {
+    position: absolute;
+    top: 18px;
+    right: 20px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: #1F2937;
+    color: #94A3B8;
+    font-size: 16px;
+    cursor: pointer;
+    z-index: 10;
+    transition: 0.2s;
+}
+
+.welcome-close-btn:hover {
+    background: #374151;
+    color: white;
+}
+
+/* ==================== SELECT EXISTING VIEW ==================== */
+.welcome-select-view {
+    padding: 40px 48px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.welcome-badge {
+    display: inline-block;
+    padding: 6px 16px;
+    background: rgba(124, 58, 237, 0.2);
+    border: 1px solid rgba(124, 58, 237, 0.4);
+    border-radius: 20px;
+    color: #C4B5FD;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 14px;
+}
+
+.welcome-hero h1 {
+    font-size: 32px;
+    font-weight: 800;
+    margin: 0 0 10px;
+    background: linear-gradient(135deg, #FFFFFF, #C4B5FD, #818CF8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.welcome-hero p {
+    font-size: 15px;
+    color: #94A3B8;
+    margin: 0 auto 30px;
+    max-width: 500px;
+}
+
+/* Existing Companion Card */
+.existing-companion-card {
+    width: 100%;
+    max-width: 600px;
+    background: #161F30;
+    border: 1px solid rgba(129, 140, 248, 0.3);
+    border-radius: 20px;
+    padding: 24px;
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    text-align: left;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), 0 0 25px rgba(99, 102, 241, 0.15);
+    margin-bottom: 30px;
+}
+
+.existing-avatar-wrap {
+    position: relative;
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    border: 3px solid #8B5CF6;
+    overflow: hidden;
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.5);
+}
+
+.existing-avatar-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.fallback-avatar {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+    background: linear-gradient(135deg, #7C3AED, #4F46E5);
+}
+
+.online-indicator {
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    width: 14px;
+    height: 14px;
+    background: #10B981;
+    border: 2px solid #111827;
+    border-radius: 50%;
+}
+
+.existing-info {
+    flex: 1;
+}
+
+.name-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.name-row h2 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 700;
+}
+
+.gender-tag {
+    background: #1F2937;
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 12px;
+    color: #A5B4FC;
+    font-weight: 600;
+    border: 1px solid #374151;
+}
+
+.existing-goal {
+    margin: 6px 0 10px;
+    font-size: 13px;
+    color: #CBD5E1;
+}
+
+.existing-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+.tag-chip {
+    padding: 3px 9px;
+    background: rgba(124, 58, 237, 0.18);
+    border: 1px solid rgba(124, 58, 237, 0.3);
+    border-radius: 6px;
+    font-size: 11px;
+    color: #C4B5FD;
+    font-weight: 500;
+}
+
+.tag-chip.hobby {
+    background: rgba(56, 189, 248, 0.15);
+    border-color: rgba(56, 189, 248, 0.3);
+    color: #7DD3FC;
+}
+
+.existing-stats-row {
+    display: flex;
+    gap: 14px;
+    font-size: 12px;
+    color: #94A3B8;
+    flex-wrap: wrap;
+}
+
+/* Action Buttons */
+.welcome-action-buttons {
+    display: flex;
+    gap: 16px;
+    width: 100%;
+    max-width: 600px;
+}
+
+.continue-btn {
+    flex: 1.2;
+    padding: 15px 24px;
+    background: linear-gradient(135deg, #7C3AED, #4F46E5);
+    border: none;
+    border-radius: 14px;
+    color: white;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(124, 58, 237, 0.45);
+    transition: 0.25s;
+}
+
+.continue-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 30px rgba(124, 58, 237, 0.65);
+}
+
+.create-new-btn {
+    flex: 1;
+    padding: 15px 20px;
+    background: #1F2937;
+    border: 1px solid #374151;
+    border-radius: 14px;
+    color: #E2E8F0;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.25s;
+}
+
+.create-new-btn:hover {
+    background: #2D3A4F;
+    border-color: #6366F1;
+    color: white;
+    transform: translateY(-2px);
+}
+
+/* ==================== CREATE VIEW ==================== */
+.welcome-create-view {
+    padding: 32px 40px;
+}
+
+.create-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid #1F2937;
+    padding-bottom: 18px;
+}
+
+.back-btn {
+    padding: 6px 12px;
+    background: #1F2937;
+    border: 1px solid #374151;
+    border-radius: 8px;
+    color: #CBD5E1;
+    font-size: 13px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.back-btn:hover {
+    background: #374151;
+    color: white;
+}
+
+.create-title-area h2 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #C4B5FD, #818CF8, #38BDF8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.create-title-area p {
+    margin: 6px 0 0;
+    font-size: 13px;
+    color: #94A3B8;
+}
+
+.create-form {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.form-section {
+    background: #161F30;
+    border: 1px solid #1F2937;
+    border-radius: 18px;
+    padding: 20px 24px;
+}
+
+.section-title {
+    margin: 0 0 16px;
+    font-size: 15px;
+    font-weight: 700;
+    color: #A5B4FC;
+    letter-spacing: 0.3px;
+}
+
+.form-row {
+    display: flex;
+    gap: 16px;
+}
+
+.flex-1 { flex: 1; }
+.flex-2 { flex: 2; }
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.form-group:last-child {
+    margin-bottom: 0;
+}
+
+.form-group label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #E2E8F0;
+}
+
+.form-group input,
+.form-group select {
+    padding: 12px 14px;
+    background: #0E1626;
+    border: 1px solid #2D3A4F;
+    border-radius: 12px;
+    color: white;
+    font-size: 14px;
+    outline: none;
+    transition: 0.2s;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    border-color: #818CF8;
+    box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.2);
+}
+
+/* Gender Selector */
+.gender-selector {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.gender-card {
+    background: #0E1626;
+    border: 1px solid #2D3A4F;
+    border-radius: 14px;
+    padding: 12px;
+    cursor: pointer;
+    text-align: center;
+    transition: 0.25s;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.gender-card:hover {
+    background: #1E293B;
+    border-color: #6366F1;
+    transform: translateY(-2px);
+}
+
+.gender-card.selected {
+    background: rgba(99, 102, 241, 0.2);
+    border-color: #818CF8;
+    box-shadow: 0 0 14px rgba(129, 140, 248, 0.3);
+}
+
+.gender-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: white;
+}
+
+.gender-desc {
+    font-size: 11px;
+    color: #94A3B8;
+}
+
+/* Speaking Styles Grid */
+.speaking-styles-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.speaking-card {
+    background: #0E1626;
+    border: 1px solid #2D3A4F;
+    border-radius: 12px;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.speaking-card:hover {
+    background: #1E293B;
+    border-color: #6366F1;
+}
+
+.speaking-card.selected {
+    background: rgba(124, 58, 237, 0.2);
+    border-color: #A78BFA;
+}
+
+.speaking-card strong {
+    display: block;
+    font-size: 13px;
+    color: #F1F5F9;
+    margin-bottom: 2px;
+}
+
+.speaking-card p {
+    margin: 0;
+    font-size: 11px;
+    color: #94A3B8;
+    line-height: 1.3;
+}
+
+/* Chips Container */
+.chips-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.chip {
+    padding: 6px 12px;
+    border-radius: 10px;
+    border: 1px solid #2D3A4F;
+    background: #0E1626;
+    color: #CBD5E1;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.chip:hover {
+    background: #1E293B;
+    color: white;
+}
+
+.chip.active {
+    background: #7C3AED;
+    border-color: #8B5CF6;
+    color: white;
+    font-weight: 600;
+}
+
+.chip.hobby.active {
+    background: #0284C7;
+    border-color: #38BDF8;
+}
+
+.custom-add-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.custom-add-row input {
+    flex: 1;
+    padding: 8px 12px;
+}
+
+.custom-add-row button {
+    padding: 8px 16px;
+    background: #1F2937;
+    border: 1px solid #374151;
+    border-radius: 10px;
+    color: #E2E8F0;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.custom-add-row button:hover {
+    background: #374151;
+    color: white;
+}
+
+/* Voice Persona Selection Cards in WelcomeModal */
+.voice-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 10px;
+    margin-top: 4px;
+}
+
+.voice-card {
+    background: #0E1626;
+    border: 1px solid #2D3A4F;
+    border-radius: 12px;
+    padding: 12px 14px;
+    cursor: pointer;
+    transition: 0.25s;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.voice-card:hover {
+    background: #1A2438;
+    border-color: #6366F1;
+    transform: translateY(-2px);
+}
+
+.voice-card.selected {
+    background: rgba(124, 58, 237, 0.2);
+    border-color: #A78BFA;
+    box-shadow: 0 0 16px rgba(124, 58, 237, 0.3);
+}
+
+.voice-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.voice-card-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: #F8FAFC;
+}
+
+.voice-card-check {
+    color: #34D399;
+    font-weight: 800;
+    font-size: 14px;
+}
+
+.voice-card-desc {
+    font-size: 12px;
+    color: #94A3B8;
+    margin: 0;
+    line-height: 1.4;
+}
+
+/* Hair Options Grid */
+.hair-options-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 8px;
+}
+
+.hair-card {
+    background: #0E1626;
+    border: 1px solid #2D3A4F;
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-size: 12px;
+    color: #CBD5E1;
+    cursor: pointer;
+    text-align: center;
+    transition: 0.2s;
+}
+
+.hair-card:hover {
+    background: #1E293B;
+    color: white;
+}
+
+.hair-card.selected {
+    background: rgba(124, 58, 237, 0.25);
+    border-color: #A78BFA;
+    color: white;
+    font-weight: 600;
+}
+
+/* Avatar Checkbox */
+.avatar-gen-checkbox label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: #CBD5E1;
+    cursor: pointer;
+}
+
+.avatar-gen-checkbox input {
+    width: 16px;
+    height: 16px;
+    accent-color: #7C3AED;
+    cursor: pointer;
+}
+
+/* Submit Button */
+.form-footer {
+    display: flex;
+    justify-content: center;
+    margin-top: 8px;
+}
+
+.submit-create-btn {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #7C3AED, #4F46E5);
+    color: white;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(124, 58, 237, 0.45);
+    transition: 0.25s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.submit-create-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(124, 58, 237, 0.65);
+}
+
+.submit-create-btn:disabled {
+    opacity: 0.75;
+    cursor: not-allowed;
+}
+
+.submitting-state {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+@media (max-width: 650px) {
+    .welcome-select-view {
+        padding: 24px;
+    }
+    .welcome-create-view {
+        padding: 20px;
+    }
+    .gender-selector,
+    .speaking-styles-grid {
+        grid-template-columns: 1fr;
+    }
+    .form-row {
+        flex-direction: column;
+    }
+}
