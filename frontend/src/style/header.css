@@ -199,6 +199,35 @@
     transform: translateY(-2px);
 }
 
+/* VIP Upgrade Button */
+.vip-header-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    background: linear-gradient(135deg, #f59e0b, #ec4899);
+    border: 1px solid rgba(251, 191, 36, 0.4);
+    border-radius: 12px;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);
+    transition: all 0.25s ease;
+    animation: vipGlowPulse 2.5s infinite alternate;
+}
+
+.vip-header-btn:hover {
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 6px 20px rgba(236, 72, 153, 0.6);
+    background: linear-gradient(135deg, #fbbf24, #f43f5e);
+}
+
+@keyframes vipGlowPulse {
+    0% { box-shadow: 0 0 10px rgba(245, 158, 11, 0.4); }
+    100% { box-shadow: 0 0 18px rgba(236, 72, 153, 0.7); }
+}
+
 /* Photo Studio Button */
 .photo-studio-btn {
     display: flex;

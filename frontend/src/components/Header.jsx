@@ -10,7 +10,8 @@ function Header({
     onToggleVoiceMode,
     onProfileClick,
     onPhotoStudioClick,
-    onNewCharacterClick
+    onNewCharacterClick,
+    onOpenVipModal
 }) {
     const [isSpeaking, setIsSpeaking] = useState(false);
 
@@ -69,6 +70,15 @@ function Header({
             </div>
 
             <div className="header-right">
+                {/* VIP Upgrade Button */}
+                <button
+                    className="vip-header-btn"
+                    onClick={onOpenVipModal}
+                    title="Upgrade to VIP / Pro Membership"
+                >
+                    💎 VIP
+                </button>
+
                 {/* Voice Mode Toggle Button */}
                 <button
                     className={`voice-mode-btn ${voiceMode ? "voice-mode-active" : "voice-mode-muted"}`}

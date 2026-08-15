@@ -8,6 +8,7 @@ import Chatwindow from "./components/Chatwindow";
 import CompanionProfile from "./components/CompanionProfile";
 import PhotoModal from "./components/PhotoModal";
 import WelcomeModal from "./components/WelcomeModal";
+import VipModal from "./components/VipModal";
 import "./App.css";
 
 function App() {
@@ -31,6 +32,7 @@ function App() {
     const [showProfile, setShowProfile] = useState(false);
     const [showPhotoModal, setShowPhotoModal] = useState(false);
     const [showWelcomeModal, setShowWelcomeModal] = useState(true);
+    const [showVipModal, setShowVipModal] = useState(false);
     const [welcomeCanClose, setWelcomeCanClose] = useState(false);
 
     // Sync with AudioManager autoPlay changes
@@ -233,6 +235,13 @@ function App() {
                     setWelcomeCanClose(true);
                     setShowWelcomeModal(true);
                 }}
+                onOpenVipModal={() => setShowVipModal(true)}
+            />
+
+            {/* VIP & Monetization Modal */}
+            <VipModal
+                isOpen={showVipModal}
+                onClose={() => setShowVipModal(false)}
             />
 
             {/* Opening Welcome & Character Creator Modal */}
