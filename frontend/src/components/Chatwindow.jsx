@@ -1,5 +1,5 @@
 import Message from "./Message";
-import "../style/ChatWindow.css";
+import "../style/Chatwindow.css";
 import {useEffect ,useRef} from "react";
 
 function ChatWindow({ messages, companion ,isTyping}) {
