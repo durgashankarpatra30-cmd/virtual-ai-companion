@@ -10,10 +10,11 @@ function Message({ message, companion, index }) {
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
     const [playbackRate, setPlaybackRate] = useState(1.0);
-    const [localAudioUrl, setLocalAudioUrl] = useState(message.audio || message.audio_url || null);
+    const [localAudioUrl, setLocalAudioUrl] = useState(message?.audio || message?.audio_url || null);
     const [isLoadingAudio, setIsLoadingAudio] = useState(false);
 
-    const trackId = `msg_${message.id || index || Date.now()}`;
+    const isUser = message?.sender === "user" || message?.role === "user";
+    const trackId = `msg_${message?.id || index || Date.now()}`;
 
     // Subscribe to global audio manager events
     useEffect(() => {

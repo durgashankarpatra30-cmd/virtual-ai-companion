@@ -41,7 +41,7 @@ function MessageInput({
     const handleKeyDown = (event) => {
         if (event.key === "Enter" && !event.shiftKey) {
             event.preventDefault();
-            if (!isTyping && message.trim() !== "") {
+            if (!isTyping && message && message.trim() !== "") {
                 sendMessage();
             }
         }
@@ -171,7 +171,7 @@ function MessageInput({
             <div className={`message-input-container ${isRecording ? "active-recording" : ""}`}>
                 <input
                     type="text"
-                    value={message}
+                    value={message || ""}
                     placeholder={
                         isRecording
                             ? "Speaking... (Click ✓ or Send when finished)"
