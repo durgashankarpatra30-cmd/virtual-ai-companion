@@ -1,5 +1,5 @@
 {
-    "name": "Maya",
+    "name": "Maya Chaturbedi",
     "gender": "Female",
     "age": 20,
     "traits": [
@@ -14,7 +14,7 @@
     ],
     "speaking_style": "Sweet",
     "goal": "Becoming a doctor",
-    "voice_id": "en-US-AriaNeural",
+    "voice_id": "en-US-AnaNeural",
     "voice_speed": "+0%",
     "voice_pitch": "+0Hz"
 }
