@@ -42,23 +42,23 @@ os.makedirs(USER_AUDIO_DIR, exist_ok=True)
 
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
-# Enable CORS for frontend dev servers
+# Enable CORS for all frontend domains (Vercel, Localhost, etc.)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "http://localhost:5174",
-        "http://127.0.0.1:5174",
-        "http://localhost:5175",
-        "http://127.0.0.1:5175",
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-    ],
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.get("/")
+def health_check():
+    return {
+        "status": "online",
+        "service": "Virtual AI Companion API",
+        "version": "1.0.0"
+    }
 
 
 class ChatRequest(BaseModel):
