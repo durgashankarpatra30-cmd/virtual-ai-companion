@@ -239,6 +239,14 @@ class CompanionAudioManager {
         return () => this.listeners.delete(callback);
     }
 
+    addListener(callback) {
+        return this.subscribe(callback);
+    }
+
+    removeListener(callback) {
+        this.listeners.delete(callback);
+    }
+
     notify(state) {
         this.listeners.forEach(cb => {
             try { cb(state); } catch (e) {}
