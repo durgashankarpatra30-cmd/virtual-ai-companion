@@ -97,27 +97,29 @@ def generate_with_groq(messages: list) -> str:
                 "content": m.get("content", "")
             })
 
-        payload = {
-            "model": GROQ_MODEL or "llama-3.3-70b-versatile",
-            "messages": formatted,
-            "temperature": 0.9,
-            "top_p": 0.95,
-            "max_tokens": 1024,
-            "presence_penalty": 0.15,
-            "frequency_penalty": 0.1,
-        }
+        models_to_try = [GROQ_MODEL or "llama-3.3-70b-versatile", "llama-3.3-70b-versatile", "llama-3.1-8b-instant"]
+        # Remove duplicates while preserving order
+        unique_models = []
+        for m in models_to_try:
+            if m and m not in unique_models:
+                unique_models.append(m)
 
-        print(f"Calling Groq Cloud API ({payload['model']})...")
-        response = requests.post(url, headers=headers, json=payload, timeout=20)
-        
-        if response.status_code == 200:
-            data = response.json()
-            if "choices" in data and len(data["choices"]) > 0:
-                reply = data["choices"][0]["message"]["content"].strip()
-                print(f"Groq Cloud generated reply ({len(reply)} chars)")
-                return reply
-        else:
-            print(f"Groq API returned status {response.status_code}: {response.text[:200]}")
+        for model_choice in unique_models:
+            try:
+                payload["model"] = model_choice
+                print(f"Calling Groq Cloud API ({model_choice})...")
+                response = requests.post(url, headers=headers, json=payload, timeout=15)
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    if "choices" in data and len(data["choices"]) > 0:
+                        reply = data["choices"][0]["message"]["content"].strip()
+                        print(f"Groq Cloud generated reply ({len(reply)} chars)")
+                        return reply
+                else:
+                    print(f"Groq API ({model_choice}) status {response.status_code}: {response.text[:200]}")
+            except Exception as model_err:
+                print(f"Groq API ({model_choice}) error: {model_err}")
     except Exception as e:
         print(f"Groq Cloud generation error: {e}")
     return None
