@@ -654,17 +654,104 @@
 }
 
 @media (max-width: 650px) {
+    .welcome-modal-overlay {
+        padding: 10px;
+    }
+
+    .welcome-modal-card {
+        max-height: 94vh;
+        max-height: 94dvh;
+        border-radius: 20px;
+    }
+
     .welcome-select-view {
-        padding: 24px;
+        padding: 24px 16px;
     }
+
+    .welcome-hero h1 {
+        font-size: 24px;
+    }
+
+    .welcome-hero p {
+        font-size: 13.5px;
+        margin-bottom: 20px;
+    }
+
+    .existing-companion-card {
+        flex-direction: column;
+        text-align: center;
+        gap: 14px;
+        padding: 18px 14px;
+        margin-bottom: 20px;
+    }
+
+    .existing-avatar-wrap {
+        margin: 0 auto;
+        width: 80px;
+        height: 80px;
+    }
+
+    .name-row {
+        justify-content: center;
+    }
+
+    .existing-tags {
+        justify-content: center;
+    }
+
+    .existing-stats-row {
+        justify-content: center;
+    }
+
+    .welcome-action-buttons {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .continue-btn, .create-new-btn {
+        padding: 13px 18px;
+        font-size: 14.5px;
+    }
+
     .welcome-create-view {
-        padding: 20px;
+        padding: 18px 14px;
     }
+
+    .create-header {
+        margin-bottom: 16px;
+        padding-bottom: 14px;
+    }
+
+    .create-title-area h2 {
+        font-size: 20px;
+    }
+
+    .form-section {
+        padding: 14px;
+        border-radius: 14px;
+    }
+
     .gender-selector,
     .speaking-styles-grid {
         grid-template-columns: 1fr;
     }
+
     .form-row {
         flex-direction: column;
+        gap: 12px;
+    }
+
+    .voice-cards-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .hair-options-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .submit-create-btn {
+        padding: 14px;
+        font-size: 15px;
     }
 }
+

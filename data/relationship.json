@@ -1,9 +1,9 @@
 {
-    "friendship_level": 0,
+    "friendship_level": 1,
     "days_talked": 1,
-    "total_messages": 1,
+    "total_messages": 4,
     "favorite_topics": [],
-    "current_mood": "Happy",
-    "relationship_progress": 5,
-    "relationship_stage": "Stranger"
+    "current_mood": "Happy & Attentive \ud83d\udc95",
+    "relationship_progress": 33.33333333333333,
+    "relationship_stage": "New Companion"
 }

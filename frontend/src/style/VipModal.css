@@ -272,3 +272,39 @@
     color: #64748b;
     font-size: 0.8rem;
 }
+
+@media (max-width: 640px) {
+    .vip-modal-overlay {
+        padding: 10px;
+    }
+
+    .vip-modal-card {
+        padding: 1.5rem 1rem;
+        max-height: 94vh;
+        max-height: 94dvh;
+        border-radius: 20px;
+    }
+
+    .vip-header {
+        margin-bottom: 1.5rem;
+    }
+
+    .vip-header h2 {
+        font-size: 1.6rem;
+    }
+
+    .vip-header p {
+        font-size: 0.88rem;
+        margin-bottom: 1rem;
+    }
+
+    .vip-plans-grid {
+        grid-template-columns: 1fr;
+        gap: 1.2rem;
+    }
+
+    .vip-plan-card {
+        padding: 1.2rem;
+    }
+}
+

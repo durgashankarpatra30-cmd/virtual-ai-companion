@@ -2,9 +2,12 @@
     display: flex;
     flex-direction: column;
     width: 100%;
-    background: #1e2638;
+    background: rgba(22, 27, 38, 0.95);
+    backdrop-filter: blur(12px);
     border-top: 1px solid rgba(255, 255, 255, 0.08);
     position: relative;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    flex-shrink: 0;
 }
 
 /* Live Voice Recording Banner */
@@ -12,25 +15,28 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 14px;
-    padding: 10px 20px;
-    background: linear-gradient(90deg, rgba(239, 68, 68, 0.15), rgba(124, 58, 237, 0.2));
+    gap: 10px;
+    padding: 8px 16px;
+    background: linear-gradient(90deg, rgba(239, 68, 68, 0.18), rgba(124, 58, 237, 0.22));
     border-bottom: 1px solid rgba(239, 68, 68, 0.3);
-    animation: fadeInSlideUp 0.3s ease;
+    animation: fadeInSlideUp 0.25s ease;
+    flex-wrap: nowrap;
+    overflow: hidden;
 }
 
 .voice-status-left {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
+    flex-shrink: 0;
 }
 
 .recording-dot {
-    width: 10px;
-    height: 10px;
+    width: 9px;
+    height: 9px;
     border-radius: 50%;
     background: #ef4444;
-    box-shadow: 0 0 10px #ef4444;
+    box-shadow: 0 0 8px #ef4444;
     animation: recordingPulse 1.2s infinite ease-in-out;
 }
 
@@ -39,14 +45,14 @@
     font-weight: 700;
     color: #f87171;
     font-family: monospace;
-    letter-spacing: 1px;
+    letter-spacing: 0.5px;
 }
 
 .voice-wave-bars {
     display: flex;
     align-items: center;
-    gap: 3px;
-    height: 28px;
+    gap: 2px;
+    height: 24px;
 }
 
 .wave-bar {
@@ -59,27 +65,29 @@
 
 .voice-transcript-preview {
     flex: 1;
-    font-size: 14px;
+    font-size: 13px;
     color: #e2e8f0;
     font-style: italic;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    padding: 0 10px;
+    padding: 0 8px;
+    min-width: 0;
 }
 
 .voice-actions-right {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
+    flex-shrink: 0;
 }
 
 .voice-cancel-btn {
-    padding: 6px 12px;
+    padding: 6px 10px;
     background: rgba(255, 255, 255, 0.1);
     color: #cbd5e1;
     border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 12px;
+    border-radius: 10px;
     cursor: pointer;
     font-size: 12px;
     font-weight: 600;
@@ -92,21 +100,20 @@
 }
 
 .voice-send-btn {
-    padding: 6px 14px;
+    padding: 6px 12px;
     background: linear-gradient(135deg, #10b981, #059669);
     color: white;
     border: none;
-    border-radius: 12px;
+    border-radius: 10px;
     cursor: pointer;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
     box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
     transition: 0.2s;
 }
 
 .voice-send-btn:hover {
-    transform: scale(1.04);
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.5);
+    transform: scale(1.03);
 }
 
 /* Input Bar Container */
@@ -114,9 +121,11 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 14px 18px;
+    padding: 10px 18px;
     background: transparent;
     transition: 0.25s;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .message-input-container.active-recording {
@@ -125,36 +134,39 @@
 
 .message-input-container input {
     flex: 1;
-    padding: 14px 20px;
-    font-size: 15px;
+    padding: 12px 18px;
+    font-size: 16px; /* 16px prevents iOS Safari auto-zoom on input focus */
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 24px;
-    background: #273147;
+    border-radius: 22px;
+    background: #1e2638;
     color: white;
     outline: none;
     transition: 0.25s;
+    min-width: 0;
 }
 
 .message-input-container input::placeholder {
     color: #8a96a8;
+    font-size: 14.5px;
 }
 
 .message-input-container input:focus {
     border-color: #8b5cf6;
     box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.25);
+    background: #252e42;
 }
 
 /* Mic & Send Buttons */
 .mic-btn, .send-btn {
-    width: 46px;
-    height: 46px;
+    width: 42px;
+    height: 42px;
     border: none;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    font-size: 18px;
+    font-size: 17px;
     transition: transform 0.2s, box-shadow 0.2s;
     flex-shrink: 0;
 }
@@ -168,8 +180,8 @@
 .mic-btn:hover {
     background: rgba(139, 92, 246, 0.2);
     border-color: #8b5cf6;
-    transform: scale(1.08);
-    box-shadow: 0 0 12px rgba(139, 92, 246, 0.4);
+    transform: scale(1.06);
+    box-shadow: 0 0 10px rgba(139, 92, 246, 0.4);
 }
 
 .mic-btn.active-recording-btn {
@@ -182,33 +194,85 @@
 .send-btn {
     background: linear-gradient(135deg, #7c3aed, #4f46e5);
     color: white;
-    font-size: 19px;
-    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.35);
+    font-size: 17px;
+    box-shadow: 0 3px 10px rgba(124, 58, 237, 0.35);
 }
 
 .send-btn:hover:not(:disabled) {
-    transform: scale(1.08);
-    box-shadow: 0 6px 16px rgba(124, 58, 237, 0.55);
+    transform: scale(1.06);
+    box-shadow: 0 5px 15px rgba(124, 58, 237, 0.55);
 }
 
 .send-btn:disabled {
-    opacity: 0.4;
+    opacity: 0.35;
     cursor: not-allowed;
     box-shadow: none;
 }
 
+/* ==================== RESPONSIVE MEDIA QUERIES ==================== */
+
+@media (max-width: 768px) {
+    .message-input-container {
+        padding: 8px 12px;
+        gap: 8px;
+    }
+
+    .message-input-container input {
+        padding: 10px 16px;
+        font-size: 16px;
+    }
+
+    .mic-btn, .send-btn {
+        width: 38px;
+        height: 38px;
+        font-size: 15px;
+    }
+}
+
+@media (max-width: 480px) {
+    .message-input-container {
+        padding: 6px 8px;
+        gap: 6px;
+    }
+
+    .message-input-container input {
+        padding: 9px 14px;
+        font-size: 16px;
+        border-radius: 18px;
+    }
+
+    .message-input-container input::placeholder {
+        font-size: 13.5px;
+    }
+
+    .voice-recording-banner {
+        padding: 6px 10px;
+        gap: 6px;
+    }
+
+    .voice-transcript-preview {
+        display: none;
+    }
+
+    .mic-btn, .send-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 14px;
+    }
+}
+
 @keyframes recordingPulse {
     0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.4; transform: scale(1.3); }
+    50% { opacity: 0.4; transform: scale(1.2); }
 }
 
 @keyframes micGlowPulse {
     0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
-    70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+    70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
     100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
 }
 
 @keyframes fadeInSlideUp {
-    from { opacity: 0; transform: translateY(8px); }
+    from { opacity: 0; transform: translateY(6px); }
     to { opacity: 1; transform: translateY(0); }
 }

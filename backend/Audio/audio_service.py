@@ -158,14 +158,14 @@ async def generate_speech_async(text: str, voice_id: str = "en-US-AriaNeural", r
         }
 
     try:
-        # Edge TTS generation
+        # Edge TTS generation with timeout
         communicate = edge_tts.Communicate(
             text=cleaned_text,
             voice=voice_id or "en-US-AriaNeural",
             rate=rate or "+0%",
             pitch=pitch or "+0Hz"
         )
-        await communicate.save(filepath)
+        await asyncio.wait_for(communicate.save(filepath), timeout=6.0)
         
         return {
             "url": relative_url,
@@ -189,21 +189,15 @@ async def generate_speech_async(text: str, voice_id: str = "en-US-AriaNeural", r
             return None
 
 def generate_speech(text: str, voice_id: str = "en-US-AriaNeural", rate: str = "+0%", pitch: str = "+0Hz") -> dict:
-    """Synchronous wrapper for generating speech."""
+    """Synchronous wrapper for generating speech with timeout protection."""
+    if not text or not text.strip():
+        return None
     try:
-        loop = asyncio.get_event_loop()
-        if loop.is_running():
-            # If inside an existing event loop, create a task or new thread
-            import concurrent.futures
-            with concurrent.futures.ThreadPoolExecutor() as pool:
-                result = pool.submit(asyncio.run, generate_speech_async(text, voice_id, rate, pitch)).result()
-                return result
-        else:
-            return loop.run_until_complete(generate_speech_async(text, voice_id, rate, pitch))
-    except Exception:
-        # Fallback to direct asyncio.run
-        try:
-            return asyncio.run(generate_speech_async(text, voice_id, rate, pitch))
-        except Exception as e:
-            print(f"Failed to generate speech in sync wrapper: {e}")
-            return None
+        import concurrent.futures
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+            future = pool.submit(asyncio.run, generate_speech_async(text, voice_id, rate, pitch))
+            return future.result(timeout=8.0)
+    except Exception as e:
+        print(f"Speech generation notice: {e}")
+        return None
+

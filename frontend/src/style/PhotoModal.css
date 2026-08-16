@@ -116,10 +116,62 @@
 }
 
 @media (max-width: 768px) {
+    .photo-modal-overlay {
+        padding: 8px;
+    }
+
+    .photo-modal-card {
+        max-height: 94vh;
+        max-height: 94dvh;
+        border-radius: 18px;
+    }
+
+    .photo-modal-header {
+        padding: 14px 16px;
+    }
+
+    .photo-modal-header .title-area h2 {
+        font-size: 18px;
+    }
+
+    .photo-modal-tabs {
+        padding: 10px 16px;
+        gap: 8px;
+    }
+
+    .photo-modal-tabs .tab-btn {
+        padding: 7px 14px;
+        font-size: 13px;
+    }
+
     .photo-modal-body {
         grid-template-columns: 1fr;
+        padding: 16px 14px;
+        gap: 16px;
+    }
+
+    .presets-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .photo-preview-box {
+        min-height: 250px;
+    }
+
+    .gallery-view {
+        padding: 14px 12px;
+    }
+
+    .gallery-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+
+    .gallery-img-wrap {
+        height: 140px;
     }
 }
+
 
 /* Controls Column */
 .photo-controls {

@@ -122,10 +122,6 @@ class CreateCompanionRequest(BaseModel):
     generate_avatar: Optional[bool] = True
 
 
-@app.get("/")
-def home():
-    return {"message": "Welcome to virtual AI Companion"}
-
 
 @app.post("/chat")
 def chat(request: ChatRequest):
