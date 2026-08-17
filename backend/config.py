@@ -18,7 +18,7 @@ for env_path in [
 
 # Cloud LLM API Keys
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "").strip().strip("\"'").strip()
-GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile").strip().strip("\"'").strip()
+GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b").strip().strip("\"'").strip()
 if not GROQ_MODEL:
-    GROQ_MODEL = "llama-3.3-70b-versatile"
+    GROQ_MODEL = "openai/gpt-oss-120b"
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip().strip("\"'").strip()

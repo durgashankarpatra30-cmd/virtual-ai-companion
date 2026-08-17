@@ -97,7 +97,13 @@ def generate_with_groq(messages: list) -> str:
                 "content": m.get("content", "")
             })
 
-        models_to_try = [GROQ_MODEL or "llama-3.3-70b-versatile", "llama-3.3-70b-versatile", "llama-3.1-8b-instant"]
+        models_to_try = [
+            GROQ_MODEL or "openai/gpt-oss-120b",
+            "openai/gpt-oss-120b",
+            "openai/gpt-oss-20b",
+            "qwen/qwen3.6-27b",
+            "groq/compound-mini",
+        ]
         # Remove duplicates while preserving order
         unique_models = []
         for m in models_to_try:
@@ -106,7 +112,12 @@ def generate_with_groq(messages: list) -> str:
 
         for model_choice in unique_models:
             try:
-                payload["model"] = model_choice
+                payload = {
+                    "model": model_choice,
+                    "messages": formatted,
+                    "temperature": 0.85,
+                    "max_tokens": 800,
+                }
                 print(f"Calling Groq Cloud API ({model_choice})...")
                 response = requests.post(url, headers=headers, json=payload, timeout=15)
                 
