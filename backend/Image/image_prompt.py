@@ -1,5 +1,6 @@
 import json
 import os
+import hashlib
 from Memory.memory import get_user_dir
 
 # --------------------------------------------------
@@ -54,44 +55,63 @@ def update_appearance_data(new_data, user_id: str = "default_user"):
     return current
 
 
+def get_character_seed(companion, user_id: str = "default_user") -> int:
+    """Generates a stable deterministic seed for the character to maintain recognizable facial likeness."""
+    name = getattr(companion, "name", "Companion")
+    gender = getattr(companion, "gender", "Female")
+    combined = f"{user_id}_{name}_{gender}_photoreal"
+    return int(hashlib.md5(combined.encode("utf-8")).hexdigest(), 16) % 900000 + 100000
+
+
 # --------------------------------------------------
-# CHARACTER / APPEARANCE PROMPT
+# HIGH-FIDELITY PHOTOREALISTIC PROMPT BUILDER
 # --------------------------------------------------
 
 def build_character_prompt(appearance, companion, outfit_override=None):
     name = getattr(companion, "name", None) or appearance.get("name", "Companion")
     gender = getattr(companion, "gender", None) or appearance.get("gender", "Female")
     age = getattr(companion, "age", None) or appearance.get("age", 20)
+    rel_mode = getattr(companion, "relationship_mode", "friendship") or "friendship"
 
     is_male = str(gender).lower() in ["male", "man", "boy", "he/him"]
     is_non_binary = str(gender).lower() in ["non-binary", "they/them", "androgynous"]
 
-    # Default styling adapted for gender if not explicitly set
+    # Gender styling
+    gender_desc = "man" if is_male else ("person" if is_non_binary else "woman")
+
     default_hair = (
-        {"color": "dark brown", "style": "short textured modern haircut", "length": "short"}
+        {"color": "dark brown", "style": "clean textured modern cut", "length": "short"}
         if is_male else
-        {"color": "black", "style": "long straight", "length": "long"}
+        {"color": "natural black", "style": "straight with soft natural layers", "length": "long"}
     )
-    default_clothing = (
-        {"top": "stylish dark jacket over fitted tee", "bottom": "dark jeans", "shoes": "clean sneakers"}
-        if is_male else
-        {"top": "stylish cozy hoodie", "bottom": "blue jeans", "shoes": "white sneakers"}
-    )
+    
+    if rel_mode == "mentor":
+        default_clothing = (
+            {"top": "tailored navy blazer over crisp fitted shirt", "bottom": "dark trousers", "shoes": "leather dress shoes"}
+            if is_male else
+            {"top": "chic tailored blazer over elegant smart top", "bottom": "tailored slacks", "shoes": "minimalist heels"}
+        )
+    else:
+        default_clothing = (
+            {"top": "stylish dark casual jacket over fitted tee", "bottom": "fitted dark jeans", "shoes": "clean white sneakers"}
+            if is_male else
+            {"top": "stylish cozy knit sweater", "bottom": "comfortable blue jeans", "shoes": "clean casual sneakers"}
+        )
 
     hair = appearance.get("hair", default_hair)
-    eyes = appearance.get("eyes", {"color": "brown", "shape": "expressive and natural"})
-    face = appearance.get("face", {"face_shape": "defined masculine jawline" if is_male else "soft oval"})
+    eyes = appearance.get("eyes", {"color": "deep expressive brown", "shape": "natural lifelike"})
+    face = appearance.get("face", {"face_shape": "defined masculine jawline" if is_male else "soft natural symmetry"})
 
     skin_tone = appearance.get("skin_tone", "Fair")
-    body_type = appearance.get("body_type", "Athletic" if is_male else "Slim")
+    body_type = appearance.get("body_type", "Athletic" if is_male else "Slim natural")
 
-    # Handle outfit override dynamically
+    # Outfit customization
     if outfit_override and str(outfit_override).strip():
         clean_outfit = str(outfit_override).strip()
-        if "saree" in clean_outfit.lower():
-            clothing_text = f"Wearing an authentic and elegant {clean_outfit}, beautifully draped with intricate border details and traditional matching jewelry"
+        if "saree" in clean_outfit.lower() or "sari" in clean_outfit.lower():
+            clothing_text = f"Wearing an authentic elegant {clean_outfit}, beautifully draped with fine fabric weave details and subtle matching jewelry"
         elif "dress" in clean_outfit.lower() or "gown" in clean_outfit.lower():
-            clothing_text = f"Wearing a gorgeous and stylish {clean_outfit}"
+            clothing_text = f"Wearing a stylish and flattering {clean_outfit}"
         elif "suit" in clean_outfit.lower() or "blazer" in clean_outfit.lower():
             clothing_text = f"Wearing a sharp, well-tailored {clean_outfit}"
         else:
@@ -103,92 +123,44 @@ def build_character_prompt(appearance, companion, outfit_override=None):
         shoes = clothing.get("shoes", "clean sneakers")
         clothing_text = f"Wearing {top}, {bottom}, and {shoes}"
 
-    accessories_list = appearance.get("accessories", [])
-    accessories = ", ".join(accessories_list) if accessories_list else "delicate necklace"
+    hair_desc = f"{hair.get('length', '')} {hair.get('color', '')} {hair.get('style', '')} hair with natural shine and realistic individual strands"
+    eye_desc = f"{eyes.get('color', 'brown')} eyes with sharp pupil focus, realistic iris depth, and subtle natural light reflections"
 
-    gender_label = "Male" if is_male else ("Person" if is_non_binary else "Female")
-
-    return f"""
-Photorealistic portrait photograph of a fictional {age}-year-old {gender_label}.
-The character's name is {name}.
-Natural human facial proportions, {skin_tone} skin tone, {body_type} body type,
-{hair.get('length', '')} {hair.get('color', '')} {hair.get('style', '')} hair,
-{eyes.get('color', '')} {eyes.get('shape', '')} eyes, {face.get('face_shape', '')} face.
+    return f"""Raw 8k color portrait photograph of a real, authentic {age}-year-old {gender_desc} named {name}.
+Realistic human facial proportions, natural {skin_tone} skin tone with genuine skin texture and subtle natural pores.
+{face.get('face_shape', 'natural face')}, {eye_desc}, {hair_desc}.
 {clothing_text}.
-Accessories: {accessories}.
-Maintain consistent character identity, natural human anatomy, realistic facial structure, authentic attire details, and believable physical features.
-""".strip()
+Maintain recognizable character facial likeness and believable human anatomy."""
 
 
-# --------------------------------------------------
-# SCENE PROMPT
-# --------------------------------------------------
-
-def build_scene_prompt(state, custom_scene=None):
+def build_scene_prompt(state, custom_scene=None, is_selfie=False):
     if custom_scene and str(custom_scene).strip():
-        return f"Scene and activity: The character is {custom_scene.strip()}."
-
-    holding = ", ".join(state.get("holding", [])) if isinstance(state.get("holding"), list) else state.get("holding", "")
-    holding_text = f"Holding: {holding}." if holding else ""
+        return f"Scene: {custom_scene.strip()}."
 
     activity = state.get("activity", "relaxing")
     location = state.get("location", "modern cozy room")
     time_of_day = state.get("time_of_day", "afternoon")
-    weather = state.get("weather", "Clear")
     pose = state.get("pose", "sitting naturally")
 
-    return f"""
-The character is currently {activity} inside/at {location}.
-Time of day: {time_of_day}. Weather: {weather}.
-Pose: {pose}. {holding_text}
-""".strip()
-
-
-# --------------------------------------------------
-# EMOTION PROMPT
-# --------------------------------------------------
-
-def build_emotion_prompt(state, custom_mood=None):
-    mood = custom_mood or state.get("mood", "Happy")
-    emotion = state.get("emotion", "Warm and welcoming")
-    expression = state.get("expression", "Gentle natural smile")
-
-    return f"""
-Current mood: {mood}. Emotional state: {emotion}.
-Facial expression: {expression}.
-The emotion should appear subtle, natural, believable, warm, and human. Avoid exaggerated expressions.
-""".strip()
-
-
-# --------------------------------------------------
-# CAMERA PROMPT
-# --------------------------------------------------
-
-def build_camera_prompt(state, is_selfie=False):
     if is_selfie:
-        return "Camera view: Front-facing mobile phone selfie angle, natural arm extension perspective, sharp focus on subject, soft depth of field background."
+        return f"Scene: Taking a front-facing candid selfie with arm extended, smiling warmly at the smartphone camera inside {location}."
 
-    camera_view = state.get("camera_view", "Eye-level portrait photograph")
-    return f"""
-Camera view: {camera_view}.
-Natural photographic composition, realistic perspective, natural depth of field, 85mm portrait lens characteristics, soft bokeh background.
-""".strip()
+    return f"Scene: The subject is currently {activity} at {location} during {time_of_day}, {pose} with natural human posture."
 
 
-# --------------------------------------------------
-# QUALITY / PHOTOREALISM PROMPT
-# --------------------------------------------------
+def build_photography_specs(is_selfie=False, is_avatar=False):
+    if is_selfie:
+        return "Camera angle: Front-facing mobile phone selfie angle, eye-level perspective, sharp focus on face, natural soft background blur, authentic smartphone photography."
+
+    if is_avatar:
+        return "Composition: Centered portrait headshot photograph, eye-level shot on Sony A7R V with 85mm f/1.4 GM lens, sharp facial focus, creamy soft background bokeh, natural studio lighting."
+
+    return "Photography specs: Shot on Sony A7R V with 85mm f/1.4 GM portrait lens, natural eye-level framing, authentic depth of field, balanced cinematic lighting, 8k raw photo."
+
 
 def build_quality_prompt():
-    return """
-Photorealistic 8k human photography, realistic skin texture, natural skin pores and subtle imperfections, individual hair strands, lifelike eyes with subtle catchlights, natural facial details, physically plausible lighting, realistic soft shadows, professional photography, cinematic aesthetic, high detail, masterpiece.
-Not an illustration, not a cartoon, not anime, not 3D CGI rendering.
-""".strip()
+    return "Ultra-photorealistic masterpiece, lifelike human skin texture, authentic lighting, highly detailed, real photograph. (Negative prompt: cartoon, illustration, 3D CGI render, anime, drawing, painting, airbrushed plastic skin, deformed fingers, extra limbs, watermark, text, low quality: -1.0)"
 
-
-# --------------------------------------------------
-# FINAL IMAGE PROMPT
-# --------------------------------------------------
 
 def build_image_prompt(
     companion,
@@ -196,6 +168,7 @@ def build_image_prompt(
     custom_scene=None,
     outfit_override=None,
     is_selfie=False,
+    is_avatar=False,
     user_id: str = "default_user",
 ):
     appearance, base_state = load_image_data(user_id)
@@ -204,18 +177,11 @@ def build_image_prompt(
     if state_override:
         state.update(state_override)
 
-    character_prompt = build_character_prompt(appearance, companion, outfit_override=outfit_override)
-    scene_prompt = build_scene_prompt(state, custom_scene=custom_scene)
-    emotion_prompt = build_emotion_prompt(state, custom_mood=state.get("mood") if state_override else None)
-    camera_prompt = build_camera_prompt(state, is_selfie=is_selfie)
-    quality_prompt = build_quality_prompt()
+    character_part = build_character_prompt(appearance, companion, outfit_override=outfit_override)
+    scene_part = build_scene_prompt(state, custom_scene=custom_scene, is_selfie=is_selfie)
+    specs_part = build_photography_specs(is_selfie=is_selfie, is_avatar=is_avatar)
+    quality_part = build_quality_prompt()
 
-    final_prompt = ", ".join([
-        character_prompt.replace("\n", " "),
-        scene_prompt.replace("\n", " "),
-        emotion_prompt.replace("\n", " "),
-        camera_prompt.replace("\n", " "),
-        quality_prompt.replace("\n", " ")
-    ])
-
-    return final_prompt
+    # Compose clean, rich photographic prompt
+    full_prompt = f"{character_part.strip()} {scene_part.strip()} {specs_part.strip()} {quality_part.strip()}"
+    return " ".join(full_prompt.split())

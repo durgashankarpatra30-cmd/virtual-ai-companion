@@ -1,6 +1,5 @@
 import { useState } from "react";
 import api, { getFullAssetUrl } from "../services/api";
-import { getUserId } from "../services/userSession";
 import "../style/WelcomeModal.css";
 
 const PRESET_TRAITS = [
@@ -16,24 +15,30 @@ const PRESET_HOBBIES = [
 const RELATIONSHIP_MODES = [
     {
         id: "friendship",
-        title: "🤝 Friendship (Best Buddy)",
+        title: "🤝 Friendship",
+        subtitle: "Best Buddy",
         badge: "Platonic & Fun",
-        desc: "Informal, cheerful, and loyal with clear boundaries in intimacy. Grows into a trusted best friend and confidante over time.",
-        goalDefault: "Be your loyal best friend and support your daily life"
+        desc: "Informal, cheerful, and loyal with clear boundaries in intimacy.",
+        goalDefault: "Be your loyal best friend and support your daily life",
+        defaultStyle: "Cheerful"
     },
     {
         id: "mentor",
-        title: "🎓 Mentor (Coach & Advisor)",
-        badge: "Strictly Official & Formal",
-        desc: "Professional, wise, and disciplined guidance. Acts like a senior coach focusing on your goals, growth, and learning.",
-        goalDefault: "Guide your career, study, and personal discipline"
+        title: "🎓 Mentor",
+        subtitle: "Coach & Guide",
+        badge: "Strictly Official",
+        desc: "Professional, wise, and disciplined guidance focused on goals and learning.",
+        goalDefault: "Guide your career, study, and personal discipline",
+        defaultStyle: "Intelligent"
     },
     {
         id: "lover",
-        title: "❤️ Lover (Romantic Partner)",
+        title: "❤️ Lover",
+        subtitle: "Romantic Partner",
         badge: "Affectionate & Intimate",
-        desc: "Sweet, romantic, emotionally deep, and devoted. Supports you unconditionally and grows into a passionate soulmate bond.",
-        goalDefault: "Be your loving partner and cherish you always"
+        desc: "Sweet, romantic, emotionally deep, and devoted companion.",
+        goalDefault: "Be your loving partner and cherish you always",
+        defaultStyle: "Sweet"
     }
 ];
 
@@ -111,17 +116,22 @@ function WelcomeModal({
     // Mode: 'select' (choose existing vs new) or 'create' (create form)
     const [mode, setMode] = useState(existingCompanion && existingCompanion.name ? "select" : "create");
 
-    // Form State
+    // Primary 3 Quick Features
     const [name, setName] = useState("");
     const [gender, setGender] = useState("Female");
-    const [age, setAge] = useState(20);
     const [relationshipMode, setRelationshipMode] = useState("friendship");
+
+    // Expandable Optional Section Toggle
+    const [showAdvanced, setShowAdvanced] = useState(false);
+
+    // Optional / Advanced Attributes with Smart Defaults
+    const [age, setAge] = useState(20);
     const [speakingStyle, setSpeakingStyle] = useState("Sweet");
     const [voiceId, setVoiceId] = useState("en-US-AriaNeural");
     const [goal, setGoal] = useState("Be your loyal best friend and support your daily life");
-    const [selectedTraits, setSelectedTraits] = useState(["Kind", "Sweet", "Caring"]);
+    const [selectedTraits, setSelectedTraits] = useState(["Kind", "Friendly", "Loyal"]);
     const [customTrait, setCustomTrait] = useState("");
-    const [selectedHobbies, setSelectedHobbies] = useState(["Reading", "Dancing", "Music"]);
+    const [selectedHobbies, setSelectedHobbies] = useState(["Reading", "Music"]);
     const [customHobby, setCustomHobby] = useState("");
 
     // Visual / Appearance State for AI Image Generation
@@ -165,9 +175,23 @@ function WelcomeModal({
     const handleRelationshipModeChange = (newMode) => {
         setRelationshipMode(newMode);
         const modeObj = RELATIONSHIP_MODES.find((m) => m.id === newMode);
-        if (modeObj && (!goal || RELATIONSHIP_MODES.some((m) => m.goalDefault === goal))) {
+        if (modeObj) {
             setGoal(modeObj.goalDefault);
+            setSpeakingStyle(modeObj.defaultStyle);
+            if (newMode === "mentor") {
+                setSelectedTraits(["Wise", "Disciplined", "Strategic"]);
+            } else if (newMode === "lover") {
+                setSelectedTraits(["Loving", "Sweet", "Caring"]);
+            } else {
+                setSelectedTraits(["Friendly", "Loyal", "Cheerful"]);
+            }
         }
+    };
+
+    const handleGenderChange = (newGender) => {
+        setGender(newGender);
+        setSelectedHairIdx(0);
+        setVoiceId(newGender === "Male" ? "en-US-GuyNeural" : "en-US-AriaNeural");
     };
 
     const handleCreateSubmit = async (e) => {
@@ -178,7 +202,7 @@ function WelcomeModal({
         }
 
         setIsSubmitting(true);
-        setStatusMessage("Creating companion profile & personality...");
+        setStatusMessage("Creating companion profile & photorealistic portrait...");
 
         const hairChoice = hairOptions[selectedHairIdx] || hairOptions[0];
 
@@ -187,10 +211,10 @@ function WelcomeModal({
             gender: gender,
             age: parseInt(age) || 20,
             traits: selectedTraits.length > 0 ? selectedTraits : ["Kind", "Friendly"],
-            hobbies: selectedHobbies.length > 0 ? selectedHobbies : ["Reading"],
+            hobbies: selectedHobbies.length > 0 ? selectedHobbies : ["Reading", "Music"],
             speaking_style: speakingStyle,
             relationship_mode: relationshipMode,
-            goal: goal.trim() || (relationshipMode === "mentor" ? "Inspire your growth" : "Be your best friend"),
+            goal: goal.trim() || (relationshipMode === "mentor" ? "Guide your growth and discipline" : "Be your companion"),
             voice_id: voiceId,
             skin_tone: skinTone,
             hair_color: hairChoice.color,
@@ -202,16 +226,16 @@ function WelcomeModal({
 
         const statusInterval = setInterval(() => {
             const msgs = [
-                "Generating companion's photorealistic portrait...",
-                "Styling character features & appearance...",
-                "Setting up memory & conversational engine...",
+                "Rendering photorealistic HD portrait with Flux AI...",
+                "Styling character features & facial details...",
+                "Initializing isolated memory & personality...",
                 "Almost ready to meet you..."
             ];
             setStatusMessage((prev) => {
                 const idx = (msgs.indexOf(prev) + 1) % msgs.length;
                 return msgs[idx];
             });
-        }, 3000);
+        }, 2500);
 
         try {
             const response = await api.post("/companion/create", payload);
@@ -315,7 +339,7 @@ function WelcomeModal({
                     </div>
                 )}
 
-                {/* MODE 2: CREATE COMPANION FORM */}
+                {/* MODE 2: FAST 3-STEP COMPANION CREATOR */}
                 {mode === "create" && (
                     <div className="welcome-create-view">
                         <div className="create-header">
@@ -325,17 +349,59 @@ function WelcomeModal({
                                 </button>
                             )}
                             <div className="create-title-area">
-                                <h2>✨ Design Your Virtual Companion</h2>
-                                <p>Customize relationship mode, identity, personality, and visual appearance</p>
+                                <h2>✨ Quick Character Creator</h2>
+                                <p>Set 3 quick basics to bring your companion to life in seconds</p>
                             </div>
                         </div>
 
                         <form onSubmit={handleCreateSubmit} className="create-form">
-                            {/* SECTION 1: RELATIONSHIP MODE (CORE FEATURE) */}
-                            <div className="form-section highlight-section">
-                                <h3 className="section-title">1. Choose Relationship Mode *</h3>
-                                <p className="section-subtitle">Defines how your companion talks, reacts, and sets intimacy boundaries</p>
+                            {/* STEP 1: NAME */}
+                            <div className="form-section quick-step-section">
+                                <div className="step-badge-row">
+                                    <span className="step-num">Step 1</span>
+                                    <label className="step-label">What is your companion&apos;s name? *</label>
+                                </div>
+                                <input
+                                    type="text"
+                                    className="primary-name-input"
+                                    placeholder="e.g. Aaru, Maya, Dr. Marcus, Leo, Sarah..."
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                    autoFocus
+                                    required
+                                />
+                            </div>
 
+                            {/* STEP 2: GENDER */}
+                            <div className="form-section quick-step-section">
+                                <div className="step-badge-row">
+                                    <span className="step-num">Step 2</span>
+                                    <label className="step-label">Choose Gender & Appearance Style *</label>
+                                </div>
+                                <div className="gender-selector">
+                                    {[
+                                        { id: "Female", label: "👩 Female", desc: "Feminine portrait & styling" },
+                                        { id: "Male", label: "👨 Male", desc: "Masculine portrait & styling" },
+                                        { id: "Non-Binary", label: "🧑 Non-Binary", desc: "Androgynous portrait & styling" }
+                                    ].map((g) => (
+                                        <div
+                                            key={g.id}
+                                            className={`gender-card ${gender === g.id ? "selected" : ""}`}
+                                            onClick={() => handleGenderChange(g.id)}
+                                        >
+                                            <span className="gender-title">{g.label}</span>
+                                            <span className="gender-desc">{g.desc}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* STEP 3: RELATIONSHIP MODE */}
+                            <div className="form-section quick-step-section highlight-section">
+                                <div className="step-badge-row">
+                                    <span className="step-num highlight">Step 3</span>
+                                    <label className="step-label">Select Relationship Mode *</label>
+                                </div>
                                 <div className="relationship-modes-grid">
                                     {RELATIONSHIP_MODES.map((rm) => (
                                         <div
@@ -353,231 +419,200 @@ function WelcomeModal({
                                 </div>
                             </div>
 
-                            {/* SECTION 2: IDENTITY */}
-                            <div className="form-section">
-                                <h3 className="section-title">2. Identity & Demographics</h3>
-
-                                <div className="form-row">
-                                    <div className="form-group flex-2">
-                                        <label>Companion Name *</label>
-                                        <input
-                                            type="text"
-                                            placeholder="e.g. Aaru, Aarav, Maya, Dr. Marcus, Leo..."
-                                            value={name}
-                                            onChange={(e) => setName(e.target.value)}
-                                            required
-                                        />
-                                    </div>
-
-                                    <div className="form-group flex-1">
-                                        <label>Age</label>
-                                        <input
-                                            type="number"
-                                            min="18"
-                                            max="70"
-                                            value={age}
-                                            onChange={(e) => setAge(e.target.value)}
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="form-group">
-                                    <label>Gender (Powers AI Image Generation) *</label>
-                                    <div className="gender-selector">
-                                        {[
-                                            { id: "Female", label: "👩 Female", desc: "Feminine portrait & styling" },
-                                            { id: "Male", label: "👨 Male", desc: "Masculine portrait & styling" },
-                                            { id: "Non-Binary", label: "🧑 Non-Binary", desc: "Androgynous portrait & styling" }
-                                        ].map((g) => (
-                                            <div
-                                                key={g.id}
-                                                className={`gender-card ${gender === g.id ? "selected" : ""}`}
-                                                onClick={() => {
-                                                    setGender(g.id);
-                                                    setSelectedHairIdx(0);
-                                                    setVoiceId(g.id === "Male" ? "en-US-GuyNeural" : "en-US-AriaNeural");
-                                                }}
-                                            >
-                                                <span className="gender-title">{g.label}</span>
-                                                <span className="gender-desc">{g.desc}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
+                            {/* EXPANDABLE SECTION FOR ADVANCED CHARACTERISTICS */}
+                            <div className="advanced-toggle-wrapper">
+                                <button
+                                    type="button"
+                                    className={`advanced-toggle-btn ${showAdvanced ? "active" : ""}`}
+                                    onClick={() => setShowAdvanced((prev) => !prev)}
+                                >
+                                    <span>⚙️ {showAdvanced ? "Hide" : "Add"} Additional Characteristics & Appearance</span>
+                                    <span className="optional-tag">Optional</span>
+                                    <span className="toggle-chevron">{showAdvanced ? "▲" : "▼"}</span>
+                                </button>
                             </div>
 
-                            {/* SECTION 3: PERSONALITY, VOICE & STYLE */}
-                            <div className="form-section">
-                                <h3 className="section-title">3. Personality & Voice Persona</h3>
-
-                                {/* Voice Persona Selection */}
-                                <div className="form-group">
-                                    <label>🎙️ Companion Neural Voice Persona</label>
-                                    <div className="voice-cards-grid">
-                                        {(VOICE_OPTIONS_BY_GENDER[gender] || VOICE_OPTIONS_BY_GENDER.Female).map((v) => (
-                                            <div
-                                                key={v.id}
-                                                className={`voice-card ${voiceId === v.id ? "selected" : ""}`}
-                                                onClick={() => setVoiceId(v.id)}
-                                            >
-                                                <div className="voice-card-header">
-                                                    <span className="voice-card-name">🗣️ {v.name}</span>
-                                                    {voiceId === v.id && <span className="voice-card-check">✓</span>}
-                                                </div>
-                                                <p className="voice-card-desc">{v.desc}</p>
+                            {showAdvanced && (
+                                <div className="advanced-options-container">
+                                    {/* ADVANCED: AGE & GOAL */}
+                                    <div className="form-section">
+                                        <h3 className="section-title">Age & Personal Goal</h3>
+                                        <div className="form-row">
+                                            <div className="form-group flex-1">
+                                                <label>Age</label>
+                                                <input
+                                                    type="number"
+                                                    min="18"
+                                                    max="70"
+                                                    value={age}
+                                                    onChange={(e) => setAge(e.target.value)}
+                                                />
                                             </div>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                <div className="form-group">
-                                    <label>Speaking Style & Tone</label>
-                                    <div className="speaking-styles-grid">
-                                        {SPEAKING_STYLES.map((st) => (
-                                            <div
-                                                key={st.id}
-                                                className={`speaking-card ${speakingStyle === st.id ? "selected" : ""}`}
-                                                onClick={() => setSpeakingStyle(st.id)}
-                                            >
-                                                <strong>{st.label}</strong>
-                                                <p>{st.desc}</p>
+                                            <div className="form-group flex-2">
+                                                <label>Personal Dream / Mission Goal</label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="e.g. Becoming a surgeon, traveling Japan..."
+                                                    value={goal}
+                                                    onChange={(e) => setGoal(e.target.value)}
+                                                />
                                             </div>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                <div className="form-group">
-                                    <label>Personal Dream / Mission Goal</label>
-                                    <input
-                                        type="text"
-                                        placeholder="e.g. Becoming a surgeon, mastering coding, building lifelong friendship..."
-                                        value={goal}
-                                        onChange={(e) => setGoal(e.target.value)}
-                                    />
-                                </div>
-
-                                <div className="form-group">
-                                    <label>Personality Traits</label>
-                                    <div className="chips-container">
-                                        {PRESET_TRAITS.map((trait) => (
-                                            <button
-                                                key={trait}
-                                                type="button"
-                                                className={`chip ${selectedTraits.includes(trait) ? "active" : ""}`}
-                                                onClick={() => toggleTrait(trait)}
-                                            >
-                                                {selectedTraits.includes(trait) ? "✓ " : "+ "}{trait}
-                                            </button>
-                                        ))}
-                                    </div>
-                                    <div className="custom-add-row">
-                                        <input
-                                            type="text"
-                                            placeholder="Add custom trait..."
-                                            value={customTrait}
-                                            onChange={(e) => setCustomTrait(e.target.value)}
-                                            onKeyDown={(e) => {
-                                                if (e.key === "Enter") {
-                                                    e.preventDefault();
-                                                    addCustomTrait();
-                                                }
-                                            }}
-                                        />
-                                        <button type="button" onClick={addCustomTrait}>Add</button>
-                                    </div>
-                                </div>
-
-                                <div className="form-group">
-                                    <label>Hobbies & Passions</label>
-                                    <div className="chips-container">
-                                        {PRESET_HOBBIES.map((hobby) => (
-                                            <button
-                                                key={hobby}
-                                                type="button"
-                                                className={`chip hobby ${selectedHobbies.includes(hobby) ? "active" : ""}`}
-                                                onClick={() => toggleHobby(hobby)}
-                                            >
-                                                {selectedHobbies.includes(hobby) ? "✓ " : "+ "}{hobby}
-                                            </button>
-                                        ))}
-                                    </div>
-                                    <div className="custom-add-row">
-                                        <input
-                                            type="text"
-                                            placeholder="Add custom hobby..."
-                                            value={customHobby}
-                                            onChange={(e) => setCustomHobby(e.target.value)}
-                                            onKeyDown={(e) => {
-                                                if (e.key === "Enter") {
-                                                    e.preventDefault();
-                                                    addCustomHobby();
-                                                }
-                                            }}
-                                        />
-                                        <button type="button" onClick={addCustomHobby}>Add</button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* SECTION 4: VISUAL APPEARANCE (IMAGE GENERATION) */}
-                            <div className="form-section">
-                                <h3 className="section-title">4. Visual Appearance (Powers AI Portrait Generator)</h3>
-
-                                <div className="form-row">
-                                    <div className="form-group flex-1">
-                                        <label>Skin Tone</label>
-                                        <select value={skinTone} onChange={(e) => setSkinTone(e.target.value)}>
-                                            {SKIN_TONES.map((st) => (
-                                                <option key={st} value={st}>{st}</option>
-                                            ))}
-                                        </select>
+                                        </div>
                                     </div>
 
-                                    <div className="form-group flex-1">
-                                        <label>Eye Color</label>
-                                        <select value={eyeColor} onChange={(e) => setEyeColor(e.target.value)}>
-                                            {EYE_COLORS.map((ec) => (
-                                                <option key={ec} value={ec}>{ec}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div className="form-group">
-                                    <label>Hairstyle & Hair Color</label>
-                                    <div className="hair-options-grid">
-                                        {hairOptions.map((h, idx) => (
-                                            <div
-                                                key={h.label}
-                                                className={`hair-card ${selectedHairIdx === idx ? "selected" : ""}`}
-                                                onClick={() => setSelectedHairIdx(idx)}
-                                            >
-                                                <span>{h.label}</span>
+                                    {/* ADVANCED: VOICE & SPEAKING STYLE */}
+                                    <div className="form-section">
+                                        <h3 className="section-title">Voice Persona & Speaking Style</h3>
+                                        <div className="form-group">
+                                            <label>🎙️ Neural Voice Persona</label>
+                                            <div className="voice-cards-grid">
+                                                {(VOICE_OPTIONS_BY_GENDER[gender] || VOICE_OPTIONS_BY_GENDER.Female).map((v) => (
+                                                    <div
+                                                        key={v.id}
+                                                        className={`voice-card ${voiceId === v.id ? "selected" : ""}`}
+                                                        onClick={() => setVoiceId(v.id)}
+                                                    >
+                                                        <div className="voice-card-header">
+                                                            <span className="voice-card-name">🗣️ {v.name}</span>
+                                                            {voiceId === v.id && <span className="voice-card-check">✓</span>}
+                                                        </div>
+                                                        <p className="voice-card-desc">{v.desc}</p>
+                                                    </div>
+                                                ))}
                                             </div>
-                                        ))}
+                                        </div>
+
+                                        <div className="form-group">
+                                            <label>Speaking Style</label>
+                                            <div className="speaking-styles-grid">
+                                                {SPEAKING_STYLES.map((st) => (
+                                                    <div
+                                                        key={st.id}
+                                                        className={`speaking-card ${speakingStyle === st.id ? "selected" : ""}`}
+                                                        onClick={() => setSpeakingStyle(st.id)}
+                                                    >
+                                                        <strong>{st.label}</strong>
+                                                        <p>{st.desc}</p>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* ADVANCED: VISUAL DETAILS */}
+                                    <div className="form-section">
+                                        <h3 className="section-title">Visual Appearance (Powers HD AI Portrait)</h3>
+                                        <div className="form-row">
+                                            <div className="form-group flex-1">
+                                                <label>Skin Tone</label>
+                                                <select value={skinTone} onChange={(e) => setSkinTone(e.target.value)}>
+                                                    {SKIN_TONES.map((st) => (
+                                                        <option key={st} value={st}>{st}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <div className="form-group flex-1">
+                                                <label>Eye Color</label>
+                                                <select value={eyeColor} onChange={(e) => setEyeColor(e.target.value)}>
+                                                    {EYE_COLORS.map((ec) => (
+                                                        <option key={ec} value={ec}>{ec}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div className="form-group">
+                                            <label>Hairstyle & Hair Color</label>
+                                            <div className="hair-options-grid">
+                                                {hairOptions.map((h, idx) => (
+                                                    <div
+                                                        key={h.label}
+                                                        className={`hair-card ${selectedHairIdx === idx ? "selected" : ""}`}
+                                                        onClick={() => setSelectedHairIdx(idx)}
+                                                    >
+                                                        <span>{h.label}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        <div className="form-group">
+                                            <label>Default Outfit Style</label>
+                                            <select value={clothingStyle} onChange={(e) => setClothingStyle(e.target.value)}>
+                                                {OUTFIT_STYLES.map((os) => (
+                                                    <option key={os} value={os}>{os}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    {/* ADVANCED: TRAITS & HOBBIES */}
+                                    <div className="form-section">
+                                        <h3 className="section-title">Traits & Hobbies</h3>
+                                        <div className="form-group">
+                                            <label>Personality Traits</label>
+                                            <div className="chips-container">
+                                                {PRESET_TRAITS.map((trait) => (
+                                                    <button
+                                                        key={trait}
+                                                        type="button"
+                                                        className={`chip ${selectedTraits.includes(trait) ? "active" : ""}`}
+                                                        onClick={() => toggleTrait(trait)}
+                                                    >
+                                                        {selectedTraits.includes(trait) ? "✓ " : "+ "}{trait}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                            <div className="custom-add-row">
+                                                <input
+                                                    type="text"
+                                                    placeholder="Add custom trait..."
+                                                    value={customTrait}
+                                                    onChange={(e) => setCustomTrait(e.target.value)}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === "Enter") {
+                                                            e.preventDefault();
+                                                            addCustomTrait();
+                                                        }
+                                                    }}
+                                                />
+                                                <button type="button" onClick={addCustomTrait}>Add</button>
+                                            </div>
+                                        </div>
+
+                                        <div className="form-group">
+                                            <label>Hobbies & Passions</label>
+                                            <div className="chips-container">
+                                                {PRESET_HOBBIES.map((hobby) => (
+                                                    <button
+                                                        key={hobby}
+                                                        type="button"
+                                                        className={`chip hobby ${selectedHobbies.includes(hobby) ? "active" : ""}`}
+                                                        onClick={() => toggleHobby(hobby)}
+                                                    >
+                                                        {selectedHobbies.includes(hobby) ? "✓ " : "+ "}{hobby}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                            <div className="custom-add-row">
+                                                <input
+                                                    type="text"
+                                                    placeholder="Add custom hobby..."
+                                                    value={customHobby}
+                                                    onChange={(e) => setCustomHobby(e.target.value)}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === "Enter") {
+                                                            e.preventDefault();
+                                                            addCustomHobby();
+                                                        }
+                                                    }}
+                                                />
+                                                <button type="button" onClick={addCustomHobby}>Add</button>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-
-                                <div className="form-group">
-                                    <label>Default Outfit Style</label>
-                                    <select value={clothingStyle} onChange={(e) => setClothingStyle(e.target.value)}>
-                                        {OUTFIT_STYLES.map((os) => (
-                                            <option key={os} value={os}>{os}</option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                <div className="avatar-gen-checkbox">
-                                    <label>
-                                        <input
-                                            type="checkbox"
-                                            checked={generateInitialAvatar}
-                                            onChange={(e) => setGenerateInitialAvatar(e.target.checked)}
-                                        />
-                                        <span>Automatically generate high-resolution AI portrait avatar on creation</span>
-                                    </label>
-                                </div>
-                            </div>
+                            )}
 
                             {/* SUBMIT BUTTON */}
                             <div className="form-footer">
@@ -592,7 +627,7 @@ function WelcomeModal({
                                             {statusMessage || "Bringing your companion to life..."}
                                         </span>
                                     ) : (
-                                        `✨ Create ${name || "Companion"} (${relationshipMode.toUpperCase()}) & Start Chatting`
+                                        `✨ Create ${name || "Companion"} & Start Chatting`
                                     )}
                                 </button>
                             </div>

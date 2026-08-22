@@ -321,6 +321,126 @@
     padding: 20px 24px;
 }
 
+.quick-step-section {
+    background: #161F30;
+    border: 1px solid rgba(129, 140, 248, 0.2);
+    border-radius: 18px;
+    padding: 18px 22px;
+}
+
+.step-badge-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.step-num {
+    display: inline-block;
+    padding: 3px 9px;
+    background: rgba(99, 102, 241, 0.2);
+    border: 1px solid rgba(99, 102, 241, 0.4);
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #A5B4FC;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.step-num.highlight {
+    background: rgba(124, 58, 237, 0.3);
+    border-color: #8B5CF6;
+    color: #DDD6FE;
+}
+
+.step-label {
+    font-size: 14.5px;
+    font-weight: 700;
+    color: #F8FAFC;
+}
+
+.primary-name-input {
+    width: 100%;
+    padding: 14px 16px;
+    background: #0E1626;
+    border: 1.5px solid #2D3A4F;
+    border-radius: 14px;
+    color: white;
+    font-size: 16px;
+    font-weight: 600;
+    outline: none;
+    transition: 0.25s;
+    box-sizing: border-box;
+}
+
+.primary-name-input:focus {
+    border-color: #818CF8;
+    box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.25);
+    background: #111B2E;
+}
+
+.primary-name-input::placeholder {
+    color: #64748B;
+    font-weight: 400;
+}
+
+/* Advanced Accordion Toggle */
+.advanced-toggle-wrapper {
+    margin: 4px 0;
+}
+
+.advanced-toggle-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    background: rgba(30, 41, 59, 0.6);
+    border: 1px dashed rgba(129, 140, 248, 0.4);
+    border-radius: 14px;
+    color: #CBD5E1;
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.25s;
+}
+
+.advanced-toggle-btn:hover {
+    background: rgba(30, 41, 59, 0.9);
+    border-color: #818CF8;
+    color: white;
+}
+
+.advanced-toggle-btn.active {
+    background: rgba(124, 58, 237, 0.15);
+    border-style: solid;
+    border-color: #8B5CF6;
+    color: #DDD6FE;
+}
+
+.optional-tag {
+    background: #1E293B;
+    border: 1px solid #334155;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    color: #94A3B8;
+    font-weight: 500;
+}
+
+.toggle-chevron {
+    font-size: 11px;
+    color: #818CF8;
+}
+
+.advanced-options-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    animation: fadeIn 0.3s ease;
+}
+
 .highlight-section {
     border-color: rgba(129, 140, 248, 0.4);
     background: linear-gradient(180deg, rgba(30, 41, 59, 0.8) 0%, #161F30 100%);

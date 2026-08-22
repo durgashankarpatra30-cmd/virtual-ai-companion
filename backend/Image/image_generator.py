@@ -8,6 +8,7 @@ from models.companion import Companion
 from Memory.memory import load_companion
 from Image.image_prompt import (
     build_image_prompt,
+    get_character_seed,
     load_json,
     save_json,
     get_image_history_file,
@@ -46,11 +47,9 @@ def save_image_history(history, user_id: str = "default_user"):
 def get_latest_avatar(user_id: str = "default_user"):
     """Get the current avatar image URL if available for the specified user."""
     history = get_image_history(user_id)
-    # First look for an explicitly marked avatar
     for item in reversed(history):
         if item.get("is_avatar"):
             return item
-    # Otherwise return the most recent image
     if history:
         return history[-1]
     return None
@@ -88,15 +87,14 @@ def generate_companion_image(
     outfit_override=None,
     is_selfie=False,
     is_avatar=False,
-    width=1024,
-    height=1024,
+    width=768,
+    height=768,
     user_id: str = "default_user",
 ):
     """
-    Generates a photorealistic image of the companion using state & appearance,
-    saves it locally to static/images/, and records in the user's history.
+    Generates a photorealistic HD image of the companion using Flux Realism / Flux AI models,
+    maintains character facial consistency, saves to static/images/, and records in history.
     """
-    # Make sure SSL environment variable is cleared
     os.environ.pop("SSLKEYLOGFILE", None)
 
     if companion is None:
@@ -115,7 +113,7 @@ def generate_companion_image(
         else:
             companion = Companion(
                 "Aaru",
-                19,
+                20,
                 ["Kind", "Sweet"],
                 ["Dancing", "Reading"],
                 "Sweet",
@@ -124,13 +122,14 @@ def generate_companion_image(
                 relationship_mode="friendship",
             )
 
-    # Build prompt with outfit and scene overrides
+    # Build prompt with rich photorealism specifications
     prompt = build_image_prompt(
         companion,
         state_override=state_override,
         custom_scene=custom_scene,
         outfit_override=outfit_override,
         is_selfie=is_selfie,
+        is_avatar=is_avatar,
         user_id=user_id,
     )
 
@@ -139,38 +138,50 @@ def generate_companion_image(
     file_path = os.path.join(IMAGES_DIR, filename)
     relative_url = f"/static/images/{filename}"
 
-    # Use Pollinations AI Turbo model for ultra-fast generation
-    seed = int(time.time() * 1000) % 1000000
+    # Use character-specific base seed for facial consistency across photos
+    char_base_seed = get_character_seed(companion, user_id=user_id)
+    # Add small scene variation while retaining core face seed
+    scene_seed = (char_base_seed + (int(time.time()) % 100)) if not is_avatar else char_base_seed
+
     encoded_prompt = urllib.parse.quote(prompt)
-    
-    # Use 512 for avatars and fast previews, 768 for studio photos
     img_w = 512 if is_avatar else min(width, 768)
     img_h = 512 if is_avatar else min(height, 768)
-    
-    api_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width={img_w}&height={img_h}&nologo=true&seed={seed}&model=turbo"
 
-    print(f"Generating image for user '{user_id}' with prompt: {prompt[:80]}...")
+    # Multi-tier state-of-the-art models for photorealism
+    models_to_try = [
+        "flux-realism",
+        "flux",
+        "turbo"
+    ]
 
     headers = {
-        "User-Agent": "VirtualCompanionApp/1.0",
+        "User-Agent": "VirtualCompanionAI/2.0",
     }
 
-    try:
-        response = requests.get(api_url, headers=headers, timeout=8)
-        if response.status_code == 200 and len(response.content) > 1000:
-            with open(file_path, "wb") as f:
-                f.write(response.content)
-            print(f"Image successfully saved to {file_path} ({len(response.content)} bytes)")
-        else:
-            raise Exception(f"Image API returned status: {response.status_code}")
+    image_saved = False
+    for model_name in models_to_try:
+        try:
+            api_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width={img_w}&height={img_h}&nologo=true&seed={scene_seed}&model={model_name}"
+            print(f"Generating photorealistic image ({model_name}) for {companion.name} (seed: {scene_seed})...")
+            
+            response = requests.get(api_url, headers=headers, timeout=12)
+            if response.status_code == 200 and len(response.content) > 2000:
+                with open(file_path, "wb") as f:
+                    f.write(response.content)
+                print(f"Image ({model_name}) successfully saved to {file_path} ({len(response.content)} bytes)")
+                image_saved = True
+                break
+            else:
+                print(f"Model {model_name} returned status {response.status_code}, trying next model...")
+        except Exception as err:
+            print(f"Model {model_name} attempt failed: {err}")
 
-    except Exception as e:
-        print(f"Fast image generation attempt failed: {e}")
-        # Return None instead of blocking companion creation
+    if not image_saved:
+        print("Image generation failed across all models.")
         return None
 
     # Record into history
-    scene_label = custom_scene or (state_override.get("activity") if state_override else None) or "Portrait Selfie"
+    scene_label = custom_scene or (state_override.get("activity") if state_override else None) or ("Selfie Portrait" if is_selfie else "Portrait")
     mood_label = (state_override.get("mood") if state_override else None) or "Happy"
 
     record = {
