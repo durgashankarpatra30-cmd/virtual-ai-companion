@@ -26,6 +26,7 @@ function CompanionProfile({
     avatarUrl,
     onClose,
     onOpenPhotoStudio,
+    onOpenDateModal,
     onOpenNewCharacter,
     onCompanionUpdated
 }) {
@@ -172,6 +173,16 @@ function CompanionProfile({
 
                 {/* Profile Actions */}
                 <div className="profile-action-row">
+                    <button
+                        className="profile-date-night-btn"
+                        onClick={() => {
+                            onClose();
+                            if (onOpenDateModal) onOpenDateModal();
+                        }}
+                    >
+                        🌹 {relMode === "lover" ? "Virtual Date" : relMode === "mentor" ? "Strategy Session" : "Hangout & Activities"}
+                    </button>
+
                     <button
                         className="profile-photo-studio-btn"
                         onClick={() => {

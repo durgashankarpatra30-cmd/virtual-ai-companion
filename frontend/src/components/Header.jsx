@@ -10,6 +10,7 @@ function Header({
     onToggleVoiceMode,
     onProfileClick,
     onPhotoStudioClick,
+    onOpenDateModal,
     onNewCharacterClick,
     onOpenVipModal
 }) {
@@ -118,6 +119,16 @@ function Header({
                     <span className="btn-label">{voiceMode ? "Voice ON" : "Muted"}</span>
                 </button>
 
+                {/* Virtual Date / Interactive Experience Button */}
+                <button
+                    className="date-night-btn"
+                    onClick={onOpenDateModal}
+                    title={relMode === "lover" ? "Go on a romantic date!" : relMode === "mentor" ? "Interactive Mentorship Session" : "Fun Bestie Hangout!"}
+                >
+                    <span className="btn-icon">🌹</span>
+                    <span className="btn-label">{relMode === "lover" ? "Date" : relMode === "mentor" ? "Session" : "Hangout"}</span>
+                </button>
+
                 {/* Photo Studio Button */}
                 <button
                     className="photo-studio-btn"
@@ -197,6 +208,13 @@ function Header({
                                 onClick={() => { setMobileMenuOpen(false); onNewCharacterClick(); }}
                             >
                                 <span>🔄</span> Switch / Create Character
+                            </button>
+
+                            <button
+                                className="dropdown-item"
+                                onClick={() => { setMobileMenuOpen(false); onOpenDateModal(); }}
+                            >
+                                <span>🌹</span> {relMode === "lover" ? "Virtual Date Experience" : relMode === "mentor" ? "Interactive Mentorship Session" : "Bestie Hangout & Activities"}
                             </button>
 
                             <button

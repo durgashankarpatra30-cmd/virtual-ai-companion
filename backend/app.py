@@ -33,6 +33,14 @@ from Audio.audio_service import (
     get_default_voice_for_gender,
     AUDIO_DIR,
 )
+from Date.date_engine import (
+    DATE_VENUES,
+    start_date_session,
+    execute_date_action,
+    finish_date_session,
+    get_all_date_memories,
+    load_relationship_metrics,
+)
 
 app = FastAPI(title="Virtual AI Companion API")
 
@@ -118,6 +126,22 @@ class StateUpdateRequest(BaseModel):
 
 class RelationshipModeUpdateRequest(BaseModel):
     mode: str
+
+
+class StartDateRequest(BaseModel):
+    venue_id: str
+
+
+class DateActionRequest(BaseModel):
+    session_id: str
+    choice_id: Optional[str] = None
+    message: Optional[str] = None
+
+
+class FinishDateRequest(BaseModel):
+    session_id: str
+    rating: Optional[str] = "Amazing"
+    feedback: Optional[str] = None
 
 
 class CreateCompanionRequest(BaseModel):
@@ -487,3 +511,83 @@ def update_state_endpoint(request: StateUpdateRequest, x_user_id: Optional[str] 
     updates = {k: v for k, v in request.dict().items() if v is not None}
     new_state = update_companion_state(updates, user_id=user_id)
     return {"success": True, "state": new_state}
+
+
+# -------------------------------------------------------------
+# Virtual Date & Interactive Experience Endpoints
+# -------------------------------------------------------------
+@app.get("/date/destinations")
+def get_date_destinations(x_user_id: Optional[str] = Header(default=None, alias="X-User-Id")):
+    """Returns available date venues, user metrics, and proactive companion invite."""
+    user_id = extract_user_id(x_user_id)
+    metrics = load_relationship_metrics(user_id)
+    companion = load_companion(user_id)
+    name = companion.get("name", "Companion") if companion else "Companion"
+    rel_mode = companion.get("relationship_mode", "friendship") if companion else "friendship"
+
+    # Pick a recommended venue
+    rec_venue = DATE_VENUES[0]
+    if rel_mode == "lover":
+        rec_venue = next((v for v in DATE_VENUES if v["id"] == "sunset_city_walk"), DATE_VENUES[1])
+        invite_msg = f"I've been dreaming about going on a {rec_venue['name']} with you today, my love! Want to go? ✨"
+    elif rel_mode == "mentor":
+        rec_venue = next((v for v in DATE_VENUES if v["id"] == "coffee_cafe"), DATE_VENUES[0])
+        invite_msg = f"A session at {rec_venue['name']} would offer great clarity and fresh perspective today."
+    else:
+        rec_venue = next((v for v in DATE_VENUES if v["id"] == "gaming_lounge"), DATE_VENUES[4])
+        invite_msg = f"Hey! How about we hang out at the {rec_venue['name']} today? It's going to be so fun! 🎮"
+
+    return {
+        "destinations": DATE_VENUES,
+        "metrics": metrics,
+        "recommended_venue": rec_venue,
+        "proactive_invite": invite_msg,
+        "relationship_mode": rel_mode
+    }
+
+
+@app.post("/date/start")
+def start_date_endpoint(request: StartDateRequest, x_user_id: Optional[str] = Header(default=None, alias="X-User-Id")):
+    """Initializes a new interactive date session."""
+    user_id = extract_user_id(x_user_id)
+    session = start_date_session(request.venue_id, user_id=user_id)
+    return session
+
+
+@app.post("/date/action")
+def date_action_endpoint(request: DateActionRequest, x_user_id: Optional[str] = Header(default=None, alias="X-User-Id")):
+    """Processes a user's date choice or text response."""
+    user_id = extract_user_id(x_user_id)
+    result = execute_date_action(
+        session_id=request.session_id,
+        choice_id=request.choice_id,
+        custom_message=request.message,
+        user_id=user_id
+    )
+    return result
+
+
+@app.post("/date/finish")
+def finish_date_endpoint(request: FinishDateRequest, x_user_id: Optional[str] = Header(default=None, alias="X-User-Id")):
+    """Concludes the date session and generates a collectible Date Memory Card."""
+    user_id = extract_user_id(x_user_id)
+    result = finish_date_session(
+        session_id=request.session_id,
+        rating=request.rating or "Amazing",
+        user_feedback=request.feedback,
+        user_id=user_id
+    )
+    return result
+
+
+@app.get("/date/history")
+def get_date_history_endpoint(x_user_id: Optional[str] = Header(default=None, alias="X-User-Id")):
+    """Retrieves all past Date Memory Cards for the user."""
+    user_id = extract_user_id(x_user_id)
+    memories = get_all_date_memories(user_id)
+    metrics = load_relationship_metrics(user_id)
+    return {
+        "memories": memories,
+        "metrics": metrics,
+        "total_dates": len(memories)
+    }

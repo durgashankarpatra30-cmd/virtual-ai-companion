@@ -227,6 +227,32 @@
     color: #e2e8f0;
 }
 
+/* Date Night / Virtual Hangout Button */
+.date-night-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 12px;
+    background: linear-gradient(135deg, rgba(225, 29, 72, 0.25) 0%, rgba(219, 39, 119, 0.25) 100%);
+    border: 1px solid rgba(244, 63, 94, 0.4);
+    border-radius: 12px;
+    color: #fbcfe8;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 2px 10px rgba(225, 29, 72, 0.2);
+    flex-shrink: 0;
+}
+
+.date-night-btn:hover {
+    background: linear-gradient(135deg, #e11d48 0%, #db2777 100%);
+    border-color: transparent;
+    color: #ffffff;
+    transform: translateY(-1px) scale(1.03);
+    box-shadow: 0 4px 16px rgba(225, 29, 72, 0.45);
+}
+
 /* Switch / New Character Button */
 .new-character-btn {
     display: flex;

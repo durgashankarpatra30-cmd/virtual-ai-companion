@@ -9,6 +9,7 @@ import CompanionProfile from "./components/CompanionProfile";
 import PhotoModal from "./components/PhotoModal";
 import WelcomeModal from "./components/WelcomeModal";
 import VipModal from "./components/VipModal";
+import DateModal from "./components/DateModal";
 import "./App.css";
 
 function App() {
@@ -31,6 +32,7 @@ function App() {
 
     const [showProfile, setShowProfile] = useState(false);
     const [showPhotoModal, setShowPhotoModal] = useState(false);
+    const [showDateModal, setShowDateModal] = useState(false);
     const [showWelcomeModal, setShowWelcomeModal] = useState(false);
     const [showVipModal, setShowVipModal] = useState(false);
     const [welcomeCanClose, setWelcomeCanClose] = useState(false);
@@ -246,6 +248,7 @@ function App() {
                 onToggleVoiceMode={toggleVoiceMode}
                 onProfileClick={() => setShowProfile(true)}
                 onPhotoStudioClick={() => setShowPhotoModal(true)}
+                onOpenDateModal={() => setShowDateModal(true)}
                 onNewCharacterClick={() => {
                     setWelcomeCanClose(true);
                     setShowWelcomeModal(true);
@@ -257,6 +260,20 @@ function App() {
             <VipModal
                 isOpen={showVipModal}
                 onClose={() => setShowVipModal(false)}
+            />
+
+            {/* Virtual Date & Experience Engine Modal */}
+            <DateModal
+                companion={companion}
+                avatarUrl={avatarUrl}
+                isOpen={showDateModal}
+                onClose={() => setShowDateModal(false)}
+                onDateCompleted={(card) => {
+                    // Update companion relationship level if modified
+                    api.get("/companion").then((res) => {
+                        if (res.data) setCompanion(res.data);
+                    });
+                }}
             />
 
             {/* Opening Welcome & Character Creator Modal */}
@@ -277,6 +294,10 @@ function App() {
                     avatarUrl={avatarUrl}
                     onClose={() => setShowProfile(false)}
                     onOpenPhotoStudio={() => setShowPhotoModal(true)}
+                    onOpenDateModal={() => {
+                        setShowProfile(false);
+                        setShowDateModal(true);
+                    }}
                     onOpenNewCharacter={() => {
                         setShowProfile(false);
                         setWelcomeCanClose(true);
