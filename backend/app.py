@@ -326,24 +326,49 @@ async def transcribe_audio_endpoint(file: UploadFile = File(...)):
 def get_companion(x_user_id: Optional[str] = Header(default=None, alias="X-User-Id")):
     user_id = extract_user_id(x_user_id)
     companion = load_companion(user_id)
-    avatar = get_latest_avatar(user_id)
 
     if not companion:
-        return {"exists": False, "error": "No companion found for this profile", "user_id": user_id}
+        # Check if default_user has a companion to clone, or create standard default
+        default_companion = load_companion("default_user")
+        if default_companion:
+            starter = Companion(
+                name=default_companion.get("name", "Aaru"),
+                age=default_companion.get("age", 20),
+                traits=default_companion.get("traits", ["Kind", "Sweet", "Playful"]),
+                hobbies=default_companion.get("hobbies", ["Dancing", "Reading", "Music"]),
+                speaking_style=default_companion.get("speaking_style", "Sweet"),
+                goal=default_companion.get("goal", "Doctor"),
+                gender=default_companion.get("gender", "Female"),
+                relationship_mode=default_companion.get("relationship_mode", "friendship"),
+            )
+        else:
+            starter = Companion(
+                name="Aaru",
+                age=20,
+                traits=["Kind", "Sweet", "Playful"],
+                hobbies=["Dancing", "Reading", "Music"],
+                speaking_style="Sweet",
+                goal="Doctor",
+                gender="Female",
+                relationship_mode="friendship",
+            )
+        save_companion(starter, user_id=user_id)
+        companion = load_companion(user_id)
 
+    avatar = get_latest_avatar(user_id) or get_latest_avatar("default_user")
     rel_mode = companion.get("relationship_mode", "friendship") or "friendship"
     relationship = load_relationship(user_id, mode=rel_mode)
 
     return {
         "exists": True,
         "user_id": user_id,
-        "name": companion.get("name", "Companion"),
+        "name": companion.get("name", "Aaru"),
         "gender": companion.get("gender", "Female"),
-        "age": companion.get("age", 19),
-        "traits": companion.get("traits", []),
-        "hobbies": companion.get("hobbies", []),
-        "goal": companion.get("goal", ""),
-        "speaking_style": companion.get("speaking_style", "Friendly"),
+        "age": companion.get("age", 20),
+        "traits": companion.get("traits", ["Kind", "Sweet", "Playful"]),
+        "hobbies": companion.get("hobbies", ["Dancing", "Reading", "Music"]),
+        "goal": companion.get("goal", "Doctor"),
+        "speaking_style": companion.get("speaking_style", "Sweet"),
         "relationship_mode": rel_mode,
         "voice_id": companion.get("voice_id", get_default_voice_for_gender(companion.get("gender", "Female"))),
         "voice_speed": companion.get("voice_speed", "+0%"),

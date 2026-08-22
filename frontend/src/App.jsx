@@ -19,11 +19,24 @@ function App() {
     // Entire chat history
     const [messages, setMessages] = useState([]);
 
-    // Companion information
-    const [companion, setCompanion] = useState(null);
+    // Companion information (load cached immediately so 0ms blank screen)
+    const [companion, setCompanion] = useState(() => {
+        try {
+            const cached = localStorage.getItem("virtual_companion_cached_profile");
+            return cached ? JSON.parse(cached) : null;
+        } catch {
+            return null;
+        }
+    });
 
     // Companion active avatar URL
-    const [avatarUrl, setAvatarUrl] = useState(null);
+    const [avatarUrl, setAvatarUrl] = useState(() => {
+        try {
+            return localStorage.getItem("virtual_companion_cached_avatar") || null;
+        } catch {
+            return null;
+        }
+    });
 
     // Auto-play Voice output mode toggle
     const [voiceMode, setVoiceMode] = useState(companionAudioManager.getAutoPlay());
@@ -35,7 +48,7 @@ function App() {
     const [showDateModal, setShowDateModal] = useState(false);
     const [showWelcomeModal, setShowWelcomeModal] = useState(false);
     const [showVipModal, setShowVipModal] = useState(false);
-    const [welcomeCanClose, setWelcomeCanClose] = useState(false);
+    const [welcomeCanClose, setWelcomeCanClose] = useState(true);
 
     // Sync with AudioManager autoPlay changes
     useEffect(() => {
@@ -52,22 +65,26 @@ function App() {
         const fetchCompanion = async () => {
             try {
                 const response = await api.get("/companion");
-                if (response.data && response.data.exists === true && response.data.name) {
+                if (response.data && response.data.name) {
                     setCompanion(response.data);
-                    if (response.data.avatar_url) {
-                        setAvatarUrl(response.data.avatar_url);
-                    } else if (response.data.avatar && response.data.avatar.url) {
-                        setAvatarUrl(response.data.avatar.url);
+                    const av = response.data.avatar_url || (response.data.avatar && response.data.avatar.url) || null;
+                    if (av) setAvatarUrl(av);
+
+                    // Cache locally for instant loading on every future visit
+                    try {
+                        localStorage.setItem("virtual_companion_cached_profile", JSON.stringify(response.data));
+                        if (av) localStorage.setItem("virtual_companion_cached_avatar", av);
+                    } catch (e) {
+                        console.warn("Storage caching error:", e);
                     }
-                    // Directly open chat with existing companion!
+
+                    // Keep modal closed
                     setShowWelcomeModal(false);
-                } else {
-                    // No companion yet on this device -> show creator modal
-                    setShowWelcomeModal(true);
                 }
             } catch (error) {
-                console.error("Error loading companion:", error);
-                setShowWelcomeModal(true);
+                console.warn("Backend still waking up, using cached profile:", error);
+                // DO NOT popup create modal on network error/wakeup!
+                setShowWelcomeModal(false);
             }
         };
 
