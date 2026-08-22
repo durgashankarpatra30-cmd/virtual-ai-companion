@@ -31,7 +31,7 @@ function App() {
 
     const [showProfile, setShowProfile] = useState(false);
     const [showPhotoModal, setShowPhotoModal] = useState(false);
-    const [showWelcomeModal, setShowWelcomeModal] = useState(true);
+    const [showWelcomeModal, setShowWelcomeModal] = useState(false);
     const [showVipModal, setShowVipModal] = useState(false);
     const [welcomeCanClose, setWelcomeCanClose] = useState(false);
 
@@ -50,16 +50,22 @@ function App() {
         const fetchCompanion = async () => {
             try {
                 const response = await api.get("/companion");
-                if (response.data && response.data.exists !== false) {
+                if (response.data && response.data.exists === true && response.data.name) {
                     setCompanion(response.data);
                     if (response.data.avatar_url) {
                         setAvatarUrl(response.data.avatar_url);
                     } else if (response.data.avatar && response.data.avatar.url) {
                         setAvatarUrl(response.data.avatar.url);
                     }
+                    // Directly open chat with existing companion!
+                    setShowWelcomeModal(false);
+                } else {
+                    // No companion yet on this device -> show creator modal
+                    setShowWelcomeModal(true);
                 }
             } catch (error) {
                 console.error("Error loading companion:", error);
+                setShowWelcomeModal(true);
             }
         };
 
