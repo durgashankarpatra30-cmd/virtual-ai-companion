@@ -1,8 +1,9 @@
 import os
 os.environ.pop("SSLKEYLOGFILE", None)
 import uuid
+import re
 from typing import Optional, Dict, Any, List
-from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi import FastAPI, HTTPException, UploadFile, File, Header
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -15,6 +16,7 @@ from Memory.memory import (
     load_relationship,
     load_chat_history,
     reset_companion_data,
+    save_relationship,
 )
 from Image.image_generator import (
     generate_companion_image,
@@ -52,12 +54,21 @@ app.add_middleware(
 )
 
 
+def extract_user_id(header_user_id: Optional[str] = None, fallback_id: Optional[str] = None) -> str:
+    """Safely extracts and sanitizes user ID from request headers or body."""
+    raw_id = header_user_id or fallback_id or "default_user"
+    clean = re.sub(r"[^a-zA-Z0-9_-]", "", str(raw_id).strip())
+    return clean if clean else "default_user"
+
+
 @app.get("/")
 def health_check():
     return {
         "status": "online",
         "service": "Virtual AI Companion API",
-        "version": "1.0.0"
+        "version": "2.0.0",
+        "multi_user_isolation": True,
+        "relationship_modes": ["friendship", "mentor", "lover"]
     }
 
 
@@ -65,6 +76,7 @@ class ChatRequest(BaseModel):
     message: str
     is_voice: Optional[bool] = False
     user_audio_url: Optional[str] = None
+    user_id: Optional[str] = None
 
 
 class TTSRequest(BaseModel):
@@ -78,6 +90,7 @@ class VoiceUpdateRequest(BaseModel):
     voice_id: Optional[str] = None
     voice_speed: Optional[str] = None
     voice_pitch: Optional[str] = None
+    relationship_mode: Optional[str] = None
 
 
 class GenerateImageRequest(BaseModel):
@@ -103,6 +116,10 @@ class StateUpdateRequest(BaseModel):
     pose: Optional[str] = None
 
 
+class RelationshipModeUpdateRequest(BaseModel):
+    mode: str
+
+
 class CreateCompanionRequest(BaseModel):
     name: str
     gender: str = "Female"
@@ -114,6 +131,7 @@ class CreateCompanionRequest(BaseModel):
     voice_id: Optional[str] = None
     voice_speed: Optional[str] = "+0%"
     voice_pitch: Optional[str] = "+0Hz"
+    relationship_mode: Optional[str] = "friendship"
     skin_tone: Optional[str] = "Fair"
     hair_color: Optional[str] = None
     hair_style: Optional[str] = None
@@ -122,11 +140,12 @@ class CreateCompanionRequest(BaseModel):
     generate_avatar: Optional[bool] = True
 
 
-
 @app.post("/chat")
-def chat(request: ChatRequest):
+def chat(request: ChatRequest, x_user_id: Optional[str] = Header(default=None, alias="X-User-Id")):
+    user_id = extract_user_id(x_user_id, request.user_id)
     result = process_message(
         request.message,
+        user_id=user_id,
         is_voice=request.is_voice or False,
         user_audio_url=request.user_audio_url
     )
@@ -144,9 +163,9 @@ def chat(request: ChatRequest):
         audio = None
         audio_data = None
 
-    companion = load_companion()
-    relationship = load_relationship()
-    avatar = get_latest_avatar()
+    companion = load_companion(user_id)
+    relationship = load_relationship(user_id, mode=companion.get("relationship_mode") if companion else "friendship")
+    avatar = get_latest_avatar(user_id)
 
     return {
         "reply": reply,
@@ -167,9 +186,10 @@ def get_voices():
 
 
 @app.post("/tts")
-def tts_endpoint(request: TTSRequest):
+def tts_endpoint(request: TTSRequest, x_user_id: Optional[str] = Header(default=None, alias="X-User-Id")):
     """Generate audio speech for custom text or voice preview."""
-    companion = load_companion()
+    user_id = extract_user_id(x_user_id)
+    companion = load_companion(user_id)
     default_voice = companion.get("voice_id") if companion else "en-US-AriaNeural"
     voice = request.voice_id or default_voice or "en-US-AriaNeural"
     
@@ -186,11 +206,14 @@ def tts_endpoint(request: TTSRequest):
 
 
 @app.post("/companion/voice")
-def update_companion_voice(request: VoiceUpdateRequest):
-    """Update companion's voice persona settings."""
-    companion_data = load_companion()
+def update_companion_voice(request: VoiceUpdateRequest, x_user_id: Optional[str] = Header(default=None, alias="X-User-Id")):
+    """Update companion's voice persona and relationship mode settings."""
+    user_id = extract_user_id(x_user_id)
+    companion_data = load_companion(user_id)
     if not companion_data:
-        raise HTTPException(status_code=404, detail="No companion found")
+        raise HTTPException(status_code=404, detail="No companion found for this profile")
+
+    rel_mode = request.relationship_mode or companion_data.get("relationship_mode", "friendship")
 
     companion = Companion(
         name=companion_data.get("name", "Companion"),
@@ -203,9 +226,53 @@ def update_companion_voice(request: VoiceUpdateRequest):
         voice_id=request.voice_id or companion_data.get("voice_id", "en-US-AriaNeural"),
         voice_speed=request.voice_speed or companion_data.get("voice_speed", "+0%"),
         voice_pitch=request.voice_pitch or companion_data.get("voice_pitch", "+0Hz"),
+        relationship_mode=rel_mode,
     )
-    saved = save_companion(companion)
+    saved = save_companion(companion, user_id=user_id)
+
+    # Sync relationship mode if updated
+    if request.relationship_mode:
+        rel = load_relationship(user_id, mode=rel_mode)
+        rel["relationship_mode"] = rel_mode
+        save_relationship(rel, user_id=user_id)
+
     return {"success": True, "companion": saved}
+
+
+@app.post("/companion/relationship-mode")
+def update_relationship_mode(request: RelationshipModeUpdateRequest, x_user_id: Optional[str] = Header(default=None, alias="X-User-Id")):
+    """Update companion's relationship mode (friendship, mentor, lover)."""
+    user_id = extract_user_id(x_user_id)
+    companion_data = load_companion(user_id)
+    if not companion_data:
+        raise HTTPException(status_code=404, detail="No companion found for this profile")
+
+    mode = request.mode.lower().strip()
+    if mode not in ["friendship", "mentor", "lover"]:
+        mode = "friendship"
+
+    companion_data["relationship_mode"] = mode
+    companion = Companion(
+        name=companion_data.get("name", "Companion"),
+        age=companion_data.get("age", 20),
+        traits=companion_data.get("traits", []),
+        hobbies=companion_data.get("hobbies", []),
+        speaking_style=companion_data.get("speaking_style", "Friendly"),
+        goal=companion_data.get("goal", ""),
+        gender=companion_data.get("gender", "Female"),
+        voice_id=companion_data.get("voice_id"),
+        voice_speed=companion_data.get("voice_speed", "+0%"),
+        voice_pitch=companion_data.get("voice_pitch", "+0Hz"),
+        relationship_mode=mode,
+    )
+    saved = save_companion(companion, user_id=user_id)
+
+    # Update relationship stage label for the new mode
+    rel = load_relationship(user_id, mode=mode)
+    rel["relationship_mode"] = mode
+    save_relationship(rel, user_id=user_id)
+
+    return {"success": True, "companion": saved, "relationship": rel}
 
 
 @app.post("/transcribe-audio")
@@ -232,16 +299,20 @@ async def transcribe_audio_endpoint(file: UploadFile = File(...)):
 
 
 @app.get("/companion")
-def get_companion():
-    companion = load_companion()
-    relationship = load_relationship()
-    avatar = get_latest_avatar()
+def get_companion(x_user_id: Optional[str] = Header(default=None, alias="X-User-Id")):
+    user_id = extract_user_id(x_user_id)
+    companion = load_companion(user_id)
+    avatar = get_latest_avatar(user_id)
 
     if not companion:
-        return {"exists": False, "error": "No companion found"}
+        return {"exists": False, "error": "No companion found for this profile", "user_id": user_id}
+
+    rel_mode = companion.get("relationship_mode", "friendship") or "friendship"
+    relationship = load_relationship(user_id, mode=rel_mode)
 
     return {
         "exists": True,
+        "user_id": user_id,
         "name": companion.get("name", "Companion"),
         "gender": companion.get("gender", "Female"),
         "age": companion.get("age", 19),
@@ -249,6 +320,7 @@ def get_companion():
         "hobbies": companion.get("hobbies", []),
         "goal": companion.get("goal", ""),
         "speaking_style": companion.get("speaking_style", "Friendly"),
+        "relationship_mode": rel_mode,
         "voice_id": companion.get("voice_id", get_default_voice_for_gender(companion.get("gender", "Female"))),
         "voice_speed": companion.get("voice_speed", "+0%"),
         "voice_pitch": companion.get("voice_pitch", "+0Hz"),
@@ -258,35 +330,42 @@ def get_companion():
         "total_messages": relationship.get("total_messages", 0),
         "relationship_progress": relationship.get("relationship_progress", 0),
         "relationship_stage": relationship.get("relationship_stage", "New Acquaintance"),
+        "relationship": relationship,
         "avatar": avatar,
         "avatar_url": avatar["url"] if avatar else None,
     }
 
 
 @app.post("/companion/create")
-def create_companion_endpoint(request: CreateCompanionRequest):
-    """Creates a new companion, resets memory/chat, updates appearance, and generates initial avatar."""
+def create_companion_endpoint(request: CreateCompanionRequest, x_user_id: Optional[str] = Header(default=None, alias="X-User-Id")):
+    """Creates a new companion for the specific user/device, resets their memory/chat, updates appearance, and generates initial avatar."""
+    user_id = extract_user_id(x_user_id)
     default_voice = get_default_voice_for_gender(request.gender)
+    rel_mode = (request.relationship_mode or "friendship").lower().strip()
+    if rel_mode not in ["friendship", "mentor", "lover"]:
+        rel_mode = "friendship"
+
     companion = Companion(
         name=request.name.strip(),
         age=request.age,
         traits=request.traits if request.traits else ["Kind", "Friendly"],
         hobbies=request.hobbies if request.hobbies else ["Reading", "Music"],
         speaking_style=request.speaking_style or "Friendly",
-        goal=request.goal or "Be your best friend",
+        goal=request.goal or ("Provide inspiring guidance" if rel_mode == "mentor" else "Be your best friend"),
         gender=request.gender or "Female",
         voice_id=request.voice_id or default_voice,
         voice_speed=request.voice_speed or "+0%",
         voice_pitch=request.voice_pitch or "+0Hz",
+        relationship_mode=rel_mode,
     )
 
-    # Save companion to data/companion.json
-    saved_companion = save_companion(companion)
+    # Save companion to data/users/<user_id>/companion.json
+    saved_companion = save_companion(companion, user_id=user_id)
 
-    # Reset chat history, memory, and relationship
-    initial_relationship = reset_companion_data()
+    # Reset chat history, memory, and relationship for this user
+    initial_relationship = reset_companion_data(user_id=user_id, mode=rel_mode)
 
-    # Update appearance.json
+    # Update appearance.json for this user
     is_male = str(request.gender).lower() in ["male", "man", "boy"]
     appearance_update = {
         "name": request.name,
@@ -310,42 +389,47 @@ def create_companion_endpoint(request: CreateCompanionRequest):
     if request.clothing_style:
         appearance_update["clothing"] = {
             "top": request.clothing_style,
-            "bottom": "Comfortable jeans",
-            "shoes": "Casual sneakers",
+            "bottom": "Comfortable pants",
+            "shoes": "Clean sneakers",
         }
 
-    update_appearance_data(appearance_update)
+    update_appearance_data(appearance_update, user_id=user_id)
 
     # Generate initial avatar if requested
     avatar_record = None
     if request.generate_avatar:
         try:
-            print(f"Generating initial avatar portrait for {companion.name} ({companion.gender})...")
+            print(f"Generating initial avatar portrait for {companion.name} ({companion.gender}) [User: {user_id}]...")
+            scene_text = "Professional portrait in formal attire" if rel_mode == "mentor" else "Natural portrait smiling warmly at the camera"
             avatar_record = generate_companion_image(
                 companion=companion,
-                custom_scene=f"Natural portrait smiling warmly at the camera",
+                custom_scene=scene_text,
                 is_avatar=True,
+                user_id=user_id,
             )
         except Exception as e:
             print(f"Initial avatar generation error: {e}")
 
     return {
         "success": True,
+        "user_id": user_id,
         "companion": saved_companion,
         "relationship": initial_relationship,
-        "avatar": avatar_record or get_latest_avatar(),
+        "avatar": avatar_record or get_latest_avatar(user_id),
     }
 
 
 @app.get("/history")
-def get_chat_history():
-    history = load_chat_history()
+def get_chat_history(x_user_id: Optional[str] = Header(default=None, alias="X-User-Id")):
+    user_id = extract_user_id(x_user_id)
+    history = load_chat_history(user_id)
     return history
 
 
 @app.post("/generate-image")
-def generate_image_endpoint(request: GenerateImageRequest):
+def generate_image_endpoint(request: GenerateImageRequest, x_user_id: Optional[str] = Header(default=None, alias="X-User-Id")):
     """Generate a new AI image for the companion."""
+    user_id = extract_user_id(x_user_id)
     state_override = {}
     if request.activity:
         state_override["activity"] = request.activity
@@ -359,6 +443,7 @@ def generate_image_endpoint(request: GenerateImageRequest):
             state_override=state_override if state_override else None,
             custom_scene=request.scene or request.custom_prompt,
             is_avatar=request.is_avatar or False,
+            user_id=user_id,
         )
         return {
             "success": True,
@@ -370,31 +455,35 @@ def generate_image_endpoint(request: GenerateImageRequest):
 
 
 @app.get("/image-history")
-def get_image_history_endpoint():
-    """Get all previously generated images."""
-    history = get_image_history()
+def get_image_history_endpoint(x_user_id: Optional[str] = Header(default=None, alias="X-User-Id")):
+    """Get all previously generated images for the user."""
+    user_id = extract_user_id(x_user_id)
+    history = get_image_history(user_id)
     return {"history": history}
 
 
 @app.get("/companion/avatar")
-def get_avatar_endpoint():
-    """Get the current avatar image."""
-    avatar = get_latest_avatar()
+def get_avatar_endpoint(x_user_id: Optional[str] = Header(default=None, alias="X-User-Id")):
+    """Get the current avatar image for the user."""
+    user_id = extract_user_id(x_user_id)
+    avatar = get_latest_avatar(user_id)
     return {"avatar": avatar}
 
 
 @app.post("/companion/avatar/set")
-def set_avatar_endpoint(request: SetAvatarRequest):
-    """Set an existing image as active avatar."""
-    success = set_active_avatar(request.image_id)
+def set_avatar_endpoint(request: SetAvatarRequest, x_user_id: Optional[str] = Header(default=None, alias="X-User-Id")):
+    """Set an existing image as active avatar for the user."""
+    user_id = extract_user_id(x_user_id)
+    success = set_active_avatar(request.image_id, user_id=user_id)
     if not success:
         raise HTTPException(status_code=404, detail="Image not found in history")
-    return {"success": True, "avatar": get_latest_avatar()}
+    return {"success": True, "avatar": get_latest_avatar(user_id)}
 
 
 @app.post("/companion/state")
-def update_state_endpoint(request: StateUpdateRequest):
+def update_state_endpoint(request: StateUpdateRequest, x_user_id: Optional[str] = Header(default=None, alias="X-User-Id")):
     """Update companion state."""
+    user_id = extract_user_id(x_user_id)
     updates = {k: v for k, v in request.dict().items() if v is not None}
-    new_state = update_companion_state(updates)
+    new_state = update_companion_state(updates, user_id=user_id)
     return {"success": True, "state": new_state}

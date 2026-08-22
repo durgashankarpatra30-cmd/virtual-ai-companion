@@ -55,6 +55,8 @@ function Header({
     const friendshipLevel = companion?.relationship?.friendship_level ?? companion?.friendship_level ?? 1;
     const totalMessages = companion?.relationship?.total_messages ?? companion?.total_messages ?? 0;
     const stage = companion?.relationship?.relationship_stage || companion?.relationship_stage || "Companion";
+    const relMode = companion?.relationship_mode || companion?.relationship?.relationship_mode || "friendship";
+    const modeBadge = relMode === "mentor" ? "🎓 Mentor" : relMode === "lover" ? "❤️ Lover" : "🤝 Friend";
 
     return (
         <header className="header">
@@ -84,6 +86,7 @@ function Header({
                     <h1 className="companion-name">
                         <span className="name-text">{companion?.name || "Companion"}</span>
                         <span className="header-gender-badge">{genderIcon}</span>
+                        <span className="header-mode-badge">{modeBadge}</span>
                     </h1>
 
                     <div className="status">

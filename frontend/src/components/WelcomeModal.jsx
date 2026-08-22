@@ -1,5 +1,6 @@
 import { useState } from "react";
 import api, { getFullAssetUrl } from "../services/api";
+import { getUserId } from "../services/userSession";
 import "../style/WelcomeModal.css";
 
 const PRESET_TRAITS = [
@@ -10,6 +11,30 @@ const PRESET_TRAITS = [
 const PRESET_HOBBIES = [
     "Singing", "Dancing", "Reading", "Gaming", "Cooking", "Photography",
     "Coding", "Painting", "Traveling", "Fitness", "Anime", "Music"
+];
+
+const RELATIONSHIP_MODES = [
+    {
+        id: "friendship",
+        title: "🤝 Friendship (Best Buddy)",
+        badge: "Platonic & Fun",
+        desc: "Informal, cheerful, and loyal with clear boundaries in intimacy. Grows into a trusted best friend and confidante over time.",
+        goalDefault: "Be your loyal best friend and support your daily life"
+    },
+    {
+        id: "mentor",
+        title: "🎓 Mentor (Coach & Advisor)",
+        badge: "Strictly Official & Formal",
+        desc: "Professional, wise, and disciplined guidance. Acts like a senior coach focusing on your goals, growth, and learning.",
+        goalDefault: "Guide your career, study, and personal discipline"
+    },
+    {
+        id: "lover",
+        title: "❤️ Lover (Romantic Partner)",
+        badge: "Affectionate & Intimate",
+        desc: "Sweet, romantic, emotionally deep, and devoted. Supports you unconditionally and grows into a passionate soulmate bond.",
+        goalDefault: "Be your loving partner and cherish you always"
+    }
 ];
 
 const SPEAKING_STYLES = [
@@ -90,9 +115,10 @@ function WelcomeModal({
     const [name, setName] = useState("");
     const [gender, setGender] = useState("Female");
     const [age, setAge] = useState(20);
+    const [relationshipMode, setRelationshipMode] = useState("friendship");
     const [speakingStyle, setSpeakingStyle] = useState("Sweet");
     const [voiceId, setVoiceId] = useState("en-US-AriaNeural");
-    const [goal, setGoal] = useState("Becoming a doctor");
+    const [goal, setGoal] = useState("Be your loyal best friend and support your daily life");
     const [selectedTraits, setSelectedTraits] = useState(["Kind", "Sweet", "Caring"]);
     const [customTrait, setCustomTrait] = useState("");
     const [selectedHobbies, setSelectedHobbies] = useState(["Reading", "Dancing", "Music"]);
@@ -136,6 +162,14 @@ function WelcomeModal({
         }
     };
 
+    const handleRelationshipModeChange = (newMode) => {
+        setRelationshipMode(newMode);
+        const modeObj = RELATIONSHIP_MODES.find((m) => m.id === newMode);
+        if (modeObj && (!goal || RELATIONSHIP_MODES.some((m) => m.goalDefault === goal))) {
+            setGoal(modeObj.goalDefault);
+        }
+    };
+
     const handleCreateSubmit = async (e) => {
         e.preventDefault();
         if (!name.trim()) {
@@ -155,7 +189,8 @@ function WelcomeModal({
             traits: selectedTraits.length > 0 ? selectedTraits : ["Kind", "Friendly"],
             hobbies: selectedHobbies.length > 0 ? selectedHobbies : ["Reading"],
             speaking_style: speakingStyle,
-            goal: goal.trim() || "Be your best friend",
+            relationship_mode: relationshipMode,
+            goal: goal.trim() || (relationshipMode === "mentor" ? "Inspire your growth" : "Be your best friend"),
             voice_id: voiceId,
             skin_tone: skinTone,
             hair_color: hairChoice.color,
@@ -203,6 +238,8 @@ function WelcomeModal({
     };
 
     const existingAvatarSrc = getFullImageUrl(avatarUrl || existingCompanion?.avatar_url || existingCompanion?.avatar?.url);
+    const existingMode = existingCompanion?.relationship_mode || existingCompanion?.relationship?.relationship_mode || "friendship";
+    const existingModeLabel = existingMode === "mentor" ? "🎓 Mentor" : existingMode === "lover" ? "❤️ Lover" : "🤝 Friend";
 
     return (
         <div className="welcome-modal-overlay">
@@ -215,9 +252,9 @@ function WelcomeModal({
                 {mode === "select" && existingCompanion && (
                     <div className="welcome-select-view">
                         <div className="welcome-hero">
-                            <span className="welcome-badge">✨ Virtual AI Companion</span>
+                            <span className="welcome-badge">🔒 Private Profile • Device Isolated</span>
                             <h1>Welcome Back!</h1>
-                            <p>Continue your journey with your companion or bring a brand new character to life.</p>
+                            <p>Continue your private journey with your companion or design a brand new character.</p>
                         </div>
 
                         <div className="existing-companion-card">
@@ -238,6 +275,7 @@ function WelcomeModal({
                                     <span className="gender-tag">
                                         {existingCompanion.gender === "Male" ? "♂ Male" : existingCompanion.gender === "Non-Binary" ? "⚧ Non-Binary" : "♀ Female"} • {existingCompanion.age} yrs
                                     </span>
+                                    <span className="mode-tag">{existingModeLabel}</span>
                                 </div>
 
                                 <p className="existing-goal">🎯 Goal: {existingCompanion.goal || "Companion"}</p>
@@ -252,9 +290,9 @@ function WelcomeModal({
                                 </div>
 
                                 <div className="existing-stats-row">
-                                    <span>❤️ Friendship Lv {existingCompanion.relationship?.friendship_level ?? existingCompanion.friendship_level ?? 1}</span>
+                                    <span>Bond Lv {existingCompanion.relationship?.friendship_level ?? existingCompanion.friendship_level ?? 1}</span>
                                     <span>💬 {existingCompanion.relationship?.total_messages ?? existingCompanion.total_messages ?? 0} messages</span>
-                                    <span>😊 Mood: {existingCompanion.relationship?.current_mood ?? existingCompanion.mood ?? "Happy"}</span>
+                                    <span>Stage: {existingCompanion.relationship?.relationship_stage ?? "Acquaintance"}</span>
                                 </div>
                             </div>
                         </div>
@@ -288,21 +326,43 @@ function WelcomeModal({
                             )}
                             <div className="create-title-area">
                                 <h2>✨ Design Your Virtual Companion</h2>
-                                <p>Customize identity, personality, speaking style, and visual appearance for AI image generation</p>
+                                <p>Customize relationship mode, identity, personality, and visual appearance</p>
                             </div>
                         </div>
 
                         <form onSubmit={handleCreateSubmit} className="create-form">
-                            {/* SECTION 1: IDENTITY */}
+                            {/* SECTION 1: RELATIONSHIP MODE (CORE FEATURE) */}
+                            <div className="form-section highlight-section">
+                                <h3 className="section-title">1. Choose Relationship Mode *</h3>
+                                <p className="section-subtitle">Defines how your companion talks, reacts, and sets intimacy boundaries</p>
+
+                                <div className="relationship-modes-grid">
+                                    {RELATIONSHIP_MODES.map((rm) => (
+                                        <div
+                                            key={rm.id}
+                                            className={`rel-mode-card ${relationshipMode === rm.id ? "selected" : ""}`}
+                                            onClick={() => handleRelationshipModeChange(rm.id)}
+                                        >
+                                            <div className="rel-mode-header">
+                                                <strong>{rm.title}</strong>
+                                                <span className="rel-mode-badge">{rm.badge}</span>
+                                            </div>
+                                            <p className="rel-mode-desc">{rm.desc}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* SECTION 2: IDENTITY */}
                             <div className="form-section">
-                                <h3 className="section-title">1. Identity & Demographics</h3>
+                                <h3 className="section-title">2. Identity & Demographics</h3>
 
                                 <div className="form-row">
                                     <div className="form-group flex-2">
                                         <label>Companion Name *</label>
                                         <input
                                             type="text"
-                                            placeholder="e.g. Aaru, Aarav, Maya, Leo..."
+                                            placeholder="e.g. Aaru, Aarav, Maya, Dr. Marcus, Leo..."
                                             value={name}
                                             onChange={(e) => setName(e.target.value)}
                                             required
@@ -314,7 +374,7 @@ function WelcomeModal({
                                         <input
                                             type="number"
                                             min="18"
-                                            max="60"
+                                            max="70"
                                             value={age}
                                             onChange={(e) => setAge(e.target.value)}
                                         />
@@ -346,9 +406,9 @@ function WelcomeModal({
                                 </div>
                             </div>
 
-                            {/* SECTION 2: PERSONALITY, VOICE & STYLE */}
+                            {/* SECTION 3: PERSONALITY, VOICE & STYLE */}
                             <div className="form-section">
-                                <h3 className="section-title">2. Personality & Voice Persona</h3>
+                                <h3 className="section-title">3. Personality & Voice Persona</h3>
 
                                 {/* Voice Persona Selection */}
                                 <div className="form-group">
@@ -387,17 +447,17 @@ function WelcomeModal({
                                 </div>
 
                                 <div className="form-group">
-                                    <label>Personal Dream / Goal</label>
+                                    <label>Personal Dream / Mission Goal</label>
                                     <input
                                         type="text"
-                                        placeholder="e.g. Becoming a surgeon, traveling to Japan, releasing an album..."
+                                        placeholder="e.g. Becoming a surgeon, mastering coding, building lifelong friendship..."
                                         value={goal}
                                         onChange={(e) => setGoal(e.target.value)}
                                     />
                                 </div>
 
                                 <div className="form-group">
-                                    <label>Personality Traits (Select or Add)</label>
+                                    <label>Personality Traits</label>
                                     <div className="chips-container">
                                         {PRESET_TRAITS.map((trait) => (
                                             <button
@@ -459,9 +519,9 @@ function WelcomeModal({
                                 </div>
                             </div>
 
-                            {/* SECTION 3: VISUAL APPEARANCE (IMAGE GENERATION) */}
+                            {/* SECTION 4: VISUAL APPEARANCE (IMAGE GENERATION) */}
                             <div className="form-section">
-                                <h3 className="section-title">3. Visual Appearance (Powers Photorealistic Image Generator)</h3>
+                                <h3 className="section-title">4. Visual Appearance (Powers AI Portrait Generator)</h3>
 
                                 <div className="form-row">
                                     <div className="form-group flex-1">
@@ -532,7 +592,7 @@ function WelcomeModal({
                                             {statusMessage || "Bringing your companion to life..."}
                                         </span>
                                     ) : (
-                                        `✨ Create ${name || "Companion"} & Start Chatting`
+                                        `✨ Create ${name || "Companion"} (${relationshipMode.toUpperCase()}) & Start Chatting`
                                     )}
                                 </button>
                             </div>

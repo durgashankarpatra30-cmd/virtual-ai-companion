@@ -101,6 +101,172 @@
     color: #94a3b8;
     margin-bottom: 16px;
     font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.profile-mode-badge {
+    background: rgba(124, 58, 237, 0.25);
+    border: 1px solid rgba(124, 58, 237, 0.45);
+    color: #DDD6FE;
+    padding: 2px 8px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+/* Mode Settings Section */
+.mode-settings-section {
+    background: rgba(30, 41, 59, 0.7);
+    border: 1px solid rgba(139, 92, 246, 0.25);
+    border-radius: 16px;
+    padding: 16px;
+    margin-top: 16px;
+}
+
+.mode-settings-section h3 {
+    margin-top: 0;
+    margin-bottom: 6px;
+    color: #c4b5fd;
+    font-size: 15px;
+}
+
+.section-desc {
+    font-size: 12px;
+    color: #94a3b8;
+    margin: 0 0 12px;
+}
+
+.mode-options-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.mode-option-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 10px 14px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.mode-option-card:hover {
+    background: #1e293b;
+    border-color: #6366f1;
+}
+
+.mode-option-card.selected {
+    background: rgba(124, 58, 237, 0.2);
+    border-color: #a78bfa;
+}
+
+.mode-option-card input {
+    margin-top: 3px;
+    accent-color: #8b5cf6;
+    cursor: pointer;
+}
+
+.mode-option-text strong {
+    display: block;
+    font-size: 13.5px;
+    color: #f8fafc;
+}
+
+.mode-option-text p {
+    font-size: 11.5px;
+    color: #94a3b8;
+    margin: 2px 0 0;
+}
+
+/* Privacy & Session Section */
+.privacy-session-section {
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(56, 189, 248, 0.2);
+    border-radius: 16px;
+    padding: 16px;
+    margin-top: 16px;
+}
+
+.privacy-session-section h3 {
+    margin-top: 0;
+    margin-bottom: 6px;
+    color: #7dd3fc;
+    font-size: 15px;
+}
+
+.privacy-desc {
+    font-size: 12px;
+    color: #94a3b8;
+    margin: 0 0 12px;
+    line-height: 1.4;
+}
+
+.session-id-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #090e1a;
+    border: 1px solid #1e293b;
+    border-radius: 10px;
+    padding: 8px 12px;
+    margin-bottom: 10px;
+}
+
+.session-label {
+    font-size: 12px;
+    color: #94a3b8;
+    font-weight: 600;
+}
+
+.session-code {
+    flex: 1;
+    font-family: monospace;
+    font-size: 12px;
+    color: #38bdf8;
+    word-break: break-all;
+}
+
+.copy-session-btn {
+    background: #1e293b;
+    border: 1px solid #334155;
+    color: #e2e8f0;
+    font-size: 11.5px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.copy-session-btn:hover {
+    background: #334155;
+    color: white;
+}
+
+.reset-session-btn {
+    width: 100%;
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    color: #fca5a5;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 9px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.reset-session-btn:hover {
+    background: rgba(239, 68, 68, 0.28);
+    border-color: #ef4444;
+    color: white;
 }
 
 /* Profile Action Row */

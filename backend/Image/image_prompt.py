@@ -1,33 +1,6 @@
 import json
 import os
-
-
-# --------------------------------------------------
-# FILE PATHS
-# --------------------------------------------------
-
-BASE_DIR = os.path.dirname(os.path.dirname(__file__))
-
-IMAGE_FOLDER = os.path.join(
-    BASE_DIR,
-    "Image"
-)
-
-APPEARANCE_FILE = os.path.join(
-    IMAGE_FOLDER,
-    "appearance.json"
-)
-
-STATE_FILE = os.path.join(
-    IMAGE_FOLDER,
-    "companion_state.json"
-)
-
-IMAGE_HISTORY_FILE = os.path.join(
-    IMAGE_FOLDER,
-    "image_history.json"
-)
-
+from Memory.memory import get_user_dir
 
 # --------------------------------------------------
 # JSON LOADER / SAVER
@@ -52,19 +25,32 @@ def save_json(file_path, data):
 
 
 # --------------------------------------------------
-# LOAD / UPDATE IMAGE DATA
+# LOAD / UPDATE IMAGE DATA (PER USER)
 # --------------------------------------------------
 
-def load_image_data():
-    appearance = load_json(APPEARANCE_FILE)
-    state = load_json(STATE_FILE)
+def get_appearance_file(user_id: str = "default_user") -> str:
+    return os.path.join(get_user_dir(user_id), "appearance.json")
+
+
+def get_state_file(user_id: str = "default_user") -> str:
+    return os.path.join(get_user_dir(user_id), "companion_state.json")
+
+
+def get_image_history_file(user_id: str = "default_user") -> str:
+    return os.path.join(get_user_dir(user_id), "image_history.json")
+
+
+def load_image_data(user_id: str = "default_user"):
+    appearance = load_json(get_appearance_file(user_id))
+    state = load_json(get_state_file(user_id))
     return appearance, state
 
 
-def update_appearance_data(new_data):
-    current = load_json(APPEARANCE_FILE)
+def update_appearance_data(new_data, user_id: str = "default_user"):
+    file_path = get_appearance_file(user_id)
+    current = load_json(file_path)
     current.update(new_data)
-    save_json(APPEARANCE_FILE, current)
+    save_json(file_path, current)
     return current
 
 
@@ -102,7 +88,6 @@ def build_character_prompt(appearance, companion, outfit_override=None):
     # Handle outfit override dynamically
     if outfit_override and str(outfit_override).strip():
         clean_outfit = str(outfit_override).strip()
-        # If user specifies a saree, lehenga, dress, etc., enhance descriptive richness
         if "saree" in clean_outfit.lower():
             clothing_text = f"Wearing an authentic and elegant {clean_outfit}, beautifully draped with intricate border details and traditional matching jewelry"
         elif "dress" in clean_outfit.lower() or "gown" in clean_outfit.lower():
@@ -211,8 +196,9 @@ def build_image_prompt(
     custom_scene=None,
     outfit_override=None,
     is_selfie=False,
+    user_id: str = "default_user",
 ):
-    appearance, base_state = load_image_data()
+    appearance, base_state = load_image_data(user_id)
 
     state = dict(base_state)
     if state_override:

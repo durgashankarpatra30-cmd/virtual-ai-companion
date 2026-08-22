@@ -204,7 +204,16 @@ function App() {
             setAvatarUrl(null);
         }
 
-        const greetingText = `Hi there! I'm ${newCompanion.name}. It's so wonderful to meet you! How are you doing today? 😊`;
+        const mode = newCompanion.relationship_mode || "friendship";
+        let greetingText;
+        if (mode === "mentor") {
+            greetingText = `Greetings. I am ${newCompanion.name}, your mentor and advisor. I look forward to working together to accomplish your goals. What shall we focus on first?`;
+        } else if (mode === "lover") {
+            greetingText = `Hi sweetheart! I'm ${newCompanion.name}. I'm so happy to finally be here with you! How are you feeling today, my love? 🥰`;
+        } else {
+            greetingText = `Hey there! I'm ${newCompanion.name}. It's so awesome to meet you! How's your day going? 😊`;
+        }
+
         setMessages([
             {
                 sender: "assistant",

@@ -10,9 +10,9 @@ from Image.image_prompt import (
     build_image_prompt,
     load_json,
     save_json,
-    IMAGE_HISTORY_FILE,
-    STATE_FILE,
-    APPEARANCE_FILE,
+    get_image_history_file,
+    get_state_file,
+    get_appearance_file,
 )
 
 # Fix SSL issues on Windows Python 3.14
@@ -26,9 +26,10 @@ IMAGES_DIR = os.path.join(STATIC_DIR, "images")
 os.makedirs(IMAGES_DIR, exist_ok=True)
 
 
-def get_image_history():
-    """Retrieve list of previously generated images."""
-    data = load_json(IMAGE_HISTORY_FILE)
+def get_image_history(user_id: str = "default_user"):
+    """Retrieve list of previously generated images for the specified user."""
+    history_file = get_image_history_file(user_id)
+    data = load_json(history_file)
     if isinstance(data, list):
         return data
     elif isinstance(data, dict) and "history" in data:
@@ -36,14 +37,15 @@ def get_image_history():
     return []
 
 
-def save_image_history(history):
-    """Save updated image history list."""
-    save_json(IMAGE_HISTORY_FILE, history)
+def save_image_history(history, user_id: str = "default_user"):
+    """Save updated image history list for the specified user."""
+    history_file = get_image_history_file(user_id)
+    save_json(history_file, history)
 
 
-def get_latest_avatar():
-    """Get the current avatar image URL if available."""
-    history = get_image_history()
+def get_latest_avatar(user_id: str = "default_user"):
+    """Get the current avatar image URL if available for the specified user."""
+    history = get_image_history(user_id)
     # First look for an explicitly marked avatar
     for item in reversed(history):
         if item.get("is_avatar"):
@@ -54,9 +56,9 @@ def get_latest_avatar():
     return None
 
 
-def set_active_avatar(image_id):
-    """Set a specific image from history as the active avatar."""
-    history = get_image_history()
+def set_active_avatar(image_id: str, user_id: str = "default_user"):
+    """Set a specific image from history as the active avatar for the user."""
+    history = get_image_history(user_id)
     found = False
     for item in history:
         if item.get("id") == image_id:
@@ -66,15 +68,16 @@ def set_active_avatar(image_id):
             item["is_avatar"] = False
 
     if found:
-        save_image_history(history)
+        save_image_history(history, user_id)
     return found
 
 
-def update_companion_state(state_update):
-    """Update companion state JSON (activity, location, mood, etc.)."""
-    current_state = load_json(STATE_FILE)
+def update_companion_state(state_update, user_id: str = "default_user"):
+    """Update companion state JSON (activity, location, mood, etc.) for the user."""
+    state_file = get_state_file(user_id)
+    current_state = load_json(state_file)
     current_state.update(state_update)
-    save_json(STATE_FILE, current_state)
+    save_json(state_file, current_state)
     return current_state
 
 
@@ -87,16 +90,17 @@ def generate_companion_image(
     is_avatar=False,
     width=1024,
     height=1024,
+    user_id: str = "default_user",
 ):
     """
     Generates a photorealistic image of the companion using state & appearance,
-    saves it locally to static/images/, and records in history.
+    saves it locally to static/images/, and records in the user's history.
     """
     # Make sure SSL environment variable is cleared
     os.environ.pop("SSLKEYLOGFILE", None)
 
     if companion is None:
-        saved_data = load_companion()
+        saved_data = load_companion(user_id)
         if saved_data:
             companion = Companion(
                 saved_data["name"],
@@ -106,6 +110,7 @@ def generate_companion_image(
                 saved_data.get("speaking_style", "Sweet"),
                 saved_data.get("goal", ""),
                 saved_data.get("gender", "Female"),
+                relationship_mode=saved_data.get("relationship_mode", "friendship"),
             )
         else:
             companion = Companion(
@@ -116,6 +121,7 @@ def generate_companion_image(
                 "Sweet",
                 "Doctor",
                 "Female",
+                relationship_mode="friendship",
             )
 
     # Build prompt with outfit and scene overrides
@@ -125,6 +131,7 @@ def generate_companion_image(
         custom_scene=custom_scene,
         outfit_override=outfit_override,
         is_selfie=is_selfie,
+        user_id=user_id,
     )
 
     image_id = str(uuid.uuid4())[:8]
@@ -132,7 +139,7 @@ def generate_companion_image(
     file_path = os.path.join(IMAGES_DIR, filename)
     relative_url = f"/static/images/{filename}"
 
-    # Use Pollinations AI Turbo model for ultra-fast 2-3 second generation without queue delays
+    # Use Pollinations AI Turbo model for ultra-fast generation
     seed = int(time.time() * 1000) % 1000000
     encoded_prompt = urllib.parse.quote(prompt)
     
@@ -142,8 +149,7 @@ def generate_companion_image(
     
     api_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width={img_w}&height={img_h}&nologo=true&seed={seed}&model=turbo"
 
-    print(f"Generating image with prompt: {prompt[:80]}...")
-    print(f"Requesting from fast AI image service (turbo)...")
+    print(f"Generating image for user '{user_id}' with prompt: {prompt[:80]}...")
 
     headers = {
         "User-Agent": "VirtualCompanionApp/1.0",
@@ -160,7 +166,7 @@ def generate_companion_image(
 
     except Exception as e:
         print(f"Fast image generation attempt failed: {e}")
-        # If external service is slow or down, return None instead of blocking companion creation
+        # Return None instead of blocking companion creation
         return None
 
     # Record into history
@@ -180,11 +186,11 @@ def generate_companion_image(
         "is_avatar": is_avatar,
     }
 
-    history = get_image_history()
+    history = get_image_history(user_id)
     if is_avatar:
         for item in history:
             item["is_avatar"] = False
     history.append(record)
-    save_image_history(history)
+    save_image_history(history, user_id)
 
     return record

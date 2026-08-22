@@ -127,6 +127,17 @@
     flex-shrink: 0;
 }
 
+.header-mode-badge {
+    font-size: 11px;
+    background: rgba(124, 58, 237, 0.2);
+    border: 1px solid rgba(124, 58, 237, 0.4);
+    color: #DDD6FE;
+    padding: 2px 7px;
+    border-radius: 6px;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
 .companion-info:hover .companion-name {
     color: #c4b5fd;
 }

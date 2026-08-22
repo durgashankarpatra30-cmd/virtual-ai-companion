@@ -1,4 +1,5 @@
 import axios from "axios";
+import { getUserId } from "./userSession";
 
 export const API_BASE_URL =
     import.meta.env.VITE_API_URL ||
@@ -12,6 +13,21 @@ const api = axios.create({
         "Content-Type": "application/json",
     },
     timeout: 60000, // 60s timeout for cloud wake-up & image generation
+});
+
+// Automatically attach unique User/Device ID to every request for complete isolation
+api.interceptors.request.use((config) => {
+    try {
+        const userId = getUserId();
+        if (userId) {
+            config.headers["X-User-Id"] = userId;
+        }
+    } catch (e) {
+        console.warn("Could not get user ID for request header:", e);
+    }
+    return config;
+}, (error) => {
+    return Promise.reject(error);
 });
 
 export const getFullAssetUrl = (url) => {

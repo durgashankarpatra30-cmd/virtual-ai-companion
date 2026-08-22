@@ -10,7 +10,8 @@ class Companion:
         gender="Female",
         voice_id=None,
         voice_speed="+0%",
-        voice_pitch="+0Hz"
+        voice_pitch="+0Hz",
+        relationship_mode="friendship"
     ):
         self.name = name
         self.age = age
@@ -22,6 +23,7 @@ class Companion:
         self.voice_id = voice_id or ("en-US-GuyNeural" if str(gender).lower() in ["male", "man", "boy"] else "en-US-AriaNeural")
         self.voice_speed = voice_speed or "+0%"
         self.voice_pitch = voice_pitch or "+0Hz"
+        self.relationship_mode = relationship_mode or "friendship"
 
     def generate_message(self, message):
         if "hi" in message.lower():

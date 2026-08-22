@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import api, { getFullAssetUrl } from "../services/api";
 import { companionAudioManager } from "../services/audioService";
+import { getUserId, resetUserSession } from "../services/userSession";
 import "../style/CompanionProfile.css";
 
 const INPUT_LANGUAGES = [
@@ -12,6 +13,12 @@ const INPUT_LANGUAGES = [
     { code: "de-DE", label: "German (Deutsch)" },
     { code: "hi-IN", label: "Hindi (हिंदी)" },
     { code: "ja-JP", label: "Japanese (日本語)" },
+];
+
+const RELATIONSHIP_MODE_OPTIONS = [
+    { id: "friendship", label: "🤝 Friendship (Best Buddy)", desc: "Informal, cheerful, boundary in intimacy" },
+    { id: "mentor", label: "🎓 Mentor (Coach & Guide)", desc: "Strictly official, professional, growth-focused" },
+    { id: "lover", label: "❤️ Lover (Romantic Partner)", desc: "Affectionate, intimate, devoted, sweet & clingy" },
 ];
 
 function CompanionProfile({
@@ -26,11 +33,14 @@ function CompanionProfile({
     const [availableVoices, setAvailableVoices] = useState([]);
     const [selectedVoice, setSelectedVoice] = useState(companion?.voice_id || "en-US-AriaNeural");
     const [selectedSpeed, setSelectedSpeed] = useState(companion?.voice_speed || "+0%");
+    const [selectedMode, setSelectedMode] = useState(companion?.relationship_mode || companion?.relationship?.relationship_mode || "friendship");
     const [autoPlayVoice, setAutoPlayVoice] = useState(companionAudioManager.getAutoPlay());
     const [inputLanguage, setInputLanguage] = useState(localStorage.getItem("virtual_companion_input_lang") || "en-US");
     const [isTestingVoice, setIsTestingVoice] = useState(false);
     const [isSavingVoice, setIsSavingVoice] = useState(false);
     const [saveStatus, setSaveStatus] = useState("");
+    const [userIdState, setUserIdState] = useState(getUserId());
+    const [copiedSession, setCopiedSession] = useState(false);
 
     useEffect(() => {
         const fetchRecentPhotos = async () => {
@@ -65,6 +75,8 @@ function CompanionProfile({
 
     const avatarSrc = getAvatarSrc();
     const genderIcon = companion?.gender === "Male" ? "♂ Male" : companion?.gender === "Non-Binary" ? "⚧ Non-Binary" : "♀ Female";
+    const currentMode = companion?.relationship_mode || companion?.relationship?.relationship_mode || "friendship";
+    const modeBadge = currentMode === "mentor" ? "🎓 Mentor" : currentMode === "lover" ? "❤️ Lover" : "🤝 Friend";
 
     // Test Voice preview sample
     const handleTestVoice = async (voiceId) => {
@@ -91,14 +103,15 @@ function CompanionProfile({
         }
     };
 
-    // Save Voice Settings
-    const handleSaveVoiceSettings = async () => {
+    // Save Voice & Mode Settings
+    const handleSaveSettings = async () => {
         setIsSavingVoice(true);
         setSaveStatus("");
         try {
             const res = await api.post("/companion/voice", {
                 voice_id: selectedVoice,
                 voice_speed: selectedSpeed,
+                relationship_mode: selectedMode,
             });
 
             companionAudioManager.setAutoPlay(autoPlayVoice);
@@ -109,13 +122,28 @@ function CompanionProfile({
                     onCompanionUpdated(res.data.companion);
                 }
             }
-            setSaveStatus("✅ Voice settings saved successfully!");
+            setSaveStatus("✅ Settings saved successfully!");
             setTimeout(() => setSaveStatus(""), 3000);
         } catch (e) {
-            console.error("Failed to save voice settings:", e);
-            setSaveStatus("❌ Error saving voice settings");
+            console.error("Failed to save settings:", e);
+            setSaveStatus("❌ Error saving settings");
         } finally {
             setIsSavingVoice(false);
+        }
+    };
+
+    const handleCopySession = () => {
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(userIdState);
+            setCopiedSession(true);
+            setTimeout(() => setCopiedSession(false), 2500);
+        }
+    };
+
+    const handleResetSession = () => {
+        if (window.confirm("Start a brand new profile on this device? Your current character & chats will be safely detached.")) {
+            resetUserSession();
+            window.location.reload();
         }
     };
 
@@ -139,7 +167,7 @@ function CompanionProfile({
                 <h2>{companion?.name}</h2>
 
                 <p className="profile-status">
-                    🟢 {companion?.status || "Online"} • {genderIcon}
+                    🟢 {companion?.status || "Online"} • {genderIcon} • <span className="profile-mode-badge">{modeBadge}</span>
                 </p>
 
                 {/* Profile Actions */}
@@ -174,7 +202,7 @@ function CompanionProfile({
                     </div>
 
                     <div>
-                        <strong>❤️ Friendship</strong>
+                        <strong>🌟 Bond Level</strong>
                         <p>Level {companion?.relationship?.friendship_level ?? companion?.friendship_level ?? 1}</p>
                     </div>
 
@@ -184,8 +212,37 @@ function CompanionProfile({
                     </div>
 
                     <div>
-                        <strong>😊 Mood</strong>
-                        <p>{companion?.relationship?.current_mood ?? companion?.mood ?? "Happy"}</p>
+                        <strong>🎭 Relationship Stage</strong>
+                        <p>{companion?.relationship?.relationship_stage || "New Companion"}</p>
+                    </div>
+                </div>
+
+                <hr/>
+
+                {/* Relationship Mode Selector */}
+                <div className="section mode-settings-section">
+                    <h3>🎭 Relationship Mode</h3>
+                    <p className="section-desc">Change how {companion?.name || "your companion"} behaves and defines intimacy boundaries:</p>
+
+                    <div className="mode-options-list">
+                        {RELATIONSHIP_MODE_OPTIONS.map((m) => (
+                            <label
+                                key={m.id}
+                                className={`mode-option-card ${selectedMode === m.id ? "selected" : ""}`}
+                            >
+                                <input
+                                    type="radio"
+                                    name="relMode"
+                                    value={m.id}
+                                    checked={selectedMode === m.id}
+                                    onChange={() => setSelectedMode(m.id)}
+                                />
+                                <div className="mode-option-text">
+                                    <strong>{m.label}</strong>
+                                    <p>{m.desc}</p>
+                                </div>
+                            </label>
+                        ))}
                     </div>
                 </div>
 
@@ -276,13 +333,31 @@ function CompanionProfile({
                     <button
                         type="button"
                         className="save-voice-btn"
-                        onClick={handleSaveVoiceSettings}
+                        onClick={handleSaveSettings}
                         disabled={isSavingVoice}
                     >
-                        {isSavingVoice ? "Saving..." : "💾 Save Voice Settings"}
+                        {isSavingVoice ? "Saving..." : "💾 Save Companion Settings"}
                     </button>
 
                     {saveStatus && <p className="save-status-msg">{saveStatus}</p>}
+                </div>
+
+                <hr/>
+
+                {/* Device & Privacy Session Info */}
+                <div className="section privacy-session-section">
+                    <h3>🔒 Device Privacy & Data Isolation</h3>
+                    <p className="privacy-desc">Your chat messages, memories, and character are strictly isolated to your device and never shared with other users.</p>
+                    <div className="session-id-row">
+                        <span className="session-label">Profile Key:</span>
+                        <code className="session-code">{userIdState.substring(0, 16)}...</code>
+                        <button className="copy-session-btn" onClick={handleCopySession}>
+                            {copiedSession ? "✓ Copied" : "📋 Copy"}
+                        </button>
+                    </div>
+                    <button className="reset-session-btn" onClick={handleResetSession}>
+                        🔄 Reset Device Profile (Start Fresh)
+                    </button>
                 </div>
 
                 <hr/>

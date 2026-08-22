@@ -34,14 +34,14 @@ def is_image_request(message):
     return False
 
 
-def process_message(user_message, is_voice=False, user_audio_url=None):
+def process_message(user_message, user_id="default_user", is_voice=False, user_audio_url=None):
     # -------------------------------
-    # Load fresh data every message
+    # Load fresh data for this user
     # -------------------------------
-    saved_data = load_companion()
+    saved_data = load_companion(user_id)
 
     if not saved_data:
-        return {"reply": "No companion found.", "image": None, "audio": None}
+        return {"reply": "No companion found. Please create a companion first!", "image": None, "audio": None}
 
     companion = Companion(
         saved_data.get("name", "Companion"),
@@ -54,11 +54,12 @@ def process_message(user_message, is_voice=False, user_audio_url=None):
         voice_id=saved_data.get("voice_id"),
         voice_speed=saved_data.get("voice_speed", "+0%"),
         voice_pitch=saved_data.get("voice_pitch", "+0Hz"),
+        relationship_mode=saved_data.get("relationship_mode", "friendship"),
     )
 
-    user_memory = load_user_memory()
-    chat_history = load_chat_history()
-    relationship = load_relationship()
+    user_memory = load_user_memory(user_id)
+    chat_history = load_chat_history(user_id)
+    relationship = load_relationship(user_id, mode=companion.relationship_mode)
 
     # -------------------------------
     # Store user's message
@@ -78,8 +79,9 @@ def process_message(user_message, is_voice=False, user_audio_url=None):
     relationship = update_relationship(
         relationship,
         user_message,
+        companion=companion,
     )
-    save_relationship(relationship)
+    save_relationship(relationship, user_id=user_id)
 
     # -------------------------------
     # Save important memories
@@ -88,7 +90,7 @@ def process_message(user_message, is_voice=False, user_audio_url=None):
         memory = extract_memory(user_message)
         if memory:
             user_memory.update(memory)
-            save_user_memory(user_memory)
+            save_user_memory(user_memory, user_id=user_id)
 
     # -------------------------------
     # Check if image generation requested
@@ -96,11 +98,16 @@ def process_message(user_message, is_voice=False, user_audio_url=None):
     generated_image = None
     if is_image_request(user_message):
         try:
-            print(f"User requested an image. Generating image for {companion.name}...")
+            print(f"User '{user_id}' requested an image. Generating image for {companion.name}...")
+            scene_desc = "Taking a friendly selfie smiling at the camera" if companion.relationship_mode == "friendship" else (
+                "Professional portrait in a modern study" if companion.relationship_mode == "mentor" else
+                "Taking a cute selfie smiling at the camera for the user"
+            )
             generated_image = generate_companion_image(
                 companion=companion,
-                custom_scene=f"Taking a cute selfie smiling at the camera for the user",
+                custom_scene=scene_desc,
                 is_avatar=False,
+                user_id=user_id,
             )
         except Exception as e:
             print(f"Could not generate image in chat: {e}")
@@ -108,7 +115,7 @@ def process_message(user_message, is_voice=False, user_audio_url=None):
     # -------------------------------
     # Build AI structured messages
     # -------------------------------
-    augmented_message = user_message + (" [Note: You just took and sent a photo/selfie to the user. Mention it naturally in your response!]" if generated_image else "")
+    augmented_message = user_message + (" [Note: You just sent a photo to the user. Mention it naturally in your response!]" if generated_image else "")
     messages = format_chat_messages(
         companion,
         user_memory,
@@ -121,7 +128,12 @@ def process_message(user_message, is_voice=False, user_audio_url=None):
     # Generate AI response
     # -------------------------------
     try:
-        response = generate_ai_message(messages, companion=companion, user_message=user_message)
+        response = generate_ai_message(
+            messages,
+            companion=companion,
+            user_message=user_message,
+            relationship=relationship,
+        )
     except Exception as e:
         print(f"AI Engine error: {e}")
         if generated_image:
@@ -158,7 +170,7 @@ def process_message(user_message, is_voice=False, user_audio_url=None):
         assistant_entry["audio_data"] = generated_audio
 
     chat_history.append(assistant_entry)
-    save_chat_history(chat_history)
+    save_chat_history(chat_history, user_id=user_id)
 
     return {
         "reply": response,

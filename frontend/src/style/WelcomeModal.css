@@ -169,6 +169,16 @@
     border: 1px solid #374151;
 }
 
+.mode-tag {
+    background: rgba(124, 58, 237, 0.25);
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 12px;
+    color: #DDD6FE;
+    font-weight: 700;
+    border: 1px solid rgba(124, 58, 237, 0.45);
+}
+
 .existing-goal {
     margin: 6px 0 10px;
     font-size: 13px;
@@ -311,12 +321,85 @@
     padding: 20px 24px;
 }
 
+.highlight-section {
+    border-color: rgba(129, 140, 248, 0.4);
+    background: linear-gradient(180deg, rgba(30, 41, 59, 0.8) 0%, #161F30 100%);
+    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.1);
+}
+
 .section-title {
-    margin: 0 0 16px;
+    margin: 0 0 4px;
     font-size: 15px;
     font-weight: 700;
     color: #A5B4FC;
     letter-spacing: 0.3px;
+}
+
+.section-subtitle {
+    margin: 0 0 16px;
+    font-size: 12px;
+    color: #94A3B8;
+}
+
+/* Relationship Modes Grid */
+.relationship-modes-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.rel-mode-card {
+    background: #0E1626;
+    border: 1px solid #2D3A4F;
+    border-radius: 14px;
+    padding: 14px 14px;
+    cursor: pointer;
+    transition: 0.25s;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    text-align: left;
+}
+
+.rel-mode-card:hover {
+    background: #1A2438;
+    border-color: #818CF8;
+    transform: translateY(-2px);
+}
+
+.rel-mode-card.selected {
+    background: rgba(124, 58, 237, 0.22);
+    border-color: #A78BFA;
+    box-shadow: 0 0 18px rgba(124, 58, 237, 0.35);
+}
+
+.rel-mode-header {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.rel-mode-header strong {
+    font-size: 14px;
+    color: #F8FAFC;
+}
+
+.rel-mode-badge {
+    display: inline-block;
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: rgba(129, 140, 248, 0.2);
+    color: #C7D2FE;
+    font-size: 10.5px;
+    font-weight: 600;
+    width: fit-content;
+}
+
+.rel-mode-desc {
+    margin: 0;
+    font-size: 11.5px;
+    color: #94A3B8;
+    line-height: 1.4;
 }
 
 .form-row {
@@ -732,7 +815,8 @@
     }
 
     .gender-selector,
-    .speaking-styles-grid {
+    .speaking-styles-grid,
+    .relationship-modes-grid {
         grid-template-columns: 1fr;
     }
 
