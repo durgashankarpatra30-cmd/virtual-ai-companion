@@ -4,8 +4,10 @@ import json
 import uuid
 import urllib.parse
 import requests
+import base64
 from models.companion import Companion
 from Memory.memory import load_companion
+from config import OPENAI_API_KEY, GEMINI_API_KEY, TOGETHER_API_KEY, HF_TOKEN
 from Image.image_prompt import (
     build_image_prompt,
     get_character_seed,
@@ -80,6 +82,81 @@ def update_companion_state(state_update, user_id: str = "default_user"):
     return current_state
 
 
+# -------------------------------------------------------------
+# DALL-E 3 (ChatGPT Image Generation Engine)
+# -------------------------------------------------------------
+def generate_with_dalle(prompt: str, file_path: str) -> bool:
+    if not OPENAI_API_KEY:
+        return False
+    try:
+        print("Attempting generation with OpenAI DALL-E 3 (ChatGPT Engine)...")
+        headers = {
+            "Authorization": f"Bearer {OPENAI_API_KEY}",
+            "Content-Type": "application/json",
+        }
+        payload = {
+            "model": "dall-e-3",
+            "prompt": prompt,
+            "n": 1,
+            "size": "1024x1024",
+            "quality": "hd",
+            "style": "natural",
+        }
+        r = requests.post("https://api.openai.com/v1/images/generations", headers=headers, json=payload, timeout=30)
+        if r.status_code == 200:
+            data = r.json()
+            image_url = data["data"][0]["url"]
+            img_res = requests.get(image_url, timeout=20)
+            if img_res.status_code == 200 and len(img_res.content) > 5000:
+                with open(file_path, "wb") as f:
+                    f.write(img_res.content)
+                print(f"Successfully generated and saved DALL-E 3 HD image ({len(img_res.content)} bytes)")
+                return True
+        else:
+            print(f"OpenAI DALL-E 3 returned status {r.status_code}: {r.text}")
+    except Exception as e:
+        print(f"OpenAI DALL-E 3 attempt error: {e}")
+    return False
+
+
+# -------------------------------------------------------------
+# Google Imagen 3 Engine
+# -------------------------------------------------------------
+def generate_with_gemini_imagen(prompt: str, file_path: str) -> bool:
+    if not GEMINI_API_KEY:
+        return False
+    try:
+        print("Attempting generation with Google Imagen 3...")
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key={GEMINI_API_KEY}"
+        headers = {"Content-Type": "application/json"}
+        payload = {
+            "instances": [{"prompt": prompt}],
+            "parameters": {
+                "sampleCount": 1,
+                "aspectRatio": "1:1",
+                "personGeneration": "ALLOW_ADULT"
+            }
+        }
+        r = requests.post(url, headers=headers, json=payload, timeout=30)
+        if r.status_code == 200:
+            data = r.json()
+            predictions = data.get("predictions", [])
+            if predictions and "bytesBase64Encoded" in predictions[0]:
+                raw_bytes = base64.b64decode(predictions[0]["bytesBase64Encoded"])
+                with open(file_path, "wb") as f:
+                    f.write(raw_bytes)
+                print(f"Successfully generated and saved Google Imagen 3 image ({len(raw_bytes)} bytes)")
+                return True
+        else:
+            print(f"Google Imagen 3 returned status {r.status_code}: {r.text}")
+    except Exception as e:
+        print(f"Google Imagen 3 attempt error: {e}")
+    return False
+
+
+# -------------------------------------------------------------
+# Core Unified Image Generator
+# -------------------------------------------------------------
 def generate_companion_image(
     companion=None,
     state_override=None,
@@ -93,8 +170,10 @@ def generate_companion_image(
     user_id: str = "default_user",
 ):
     """
-    Generates a photorealistic human image using state-of-the-art Flux models.
-    Uses waist-up medium portrait composition (768x768) to guarantee clear, gorgeous facial features and distinct outfits.
+    Generates a photorealistic human image using:
+    1. OpenAI DALL-E 3 (if OPENAI_API_KEY provided)
+    2. Google Imagen 3 (if GEMINI_API_KEY provided)
+    3. State-of-the-art Flux Photoreal Engine (Zero-config free tier)
     """
     os.environ.pop("SSLKEYLOGFILE", None)
 
@@ -143,43 +222,47 @@ def generate_companion_image(
     file_path = os.path.join(IMAGES_DIR, filename)
     relative_url = f"/static/images/{filename}"
 
-    # Consistent character base seed
-    char_base_seed = get_character_seed(companion, user_id=user_id)
-    scene_seed = (char_base_seed + (int(time.time()) % 150)) if not is_avatar else char_base_seed
+    # Try Tier 1: OpenAI DALL-E 3 / ChatGPT
+    if generate_with_dalle(prompt, file_path):
+        pass
+    # Try Tier 2: Google Imagen 3
+    elif generate_with_gemini_imagen(prompt, file_path):
+        pass
+    # Tier 3: Zero-Config Free Flux Photoreal Engine
+    else:
+        char_base_seed = get_character_seed(companion, user_id=user_id)
+        scene_seed = (char_base_seed + (int(time.time()) % 150)) if not is_avatar else char_base_seed
+        encoded_prompt = urllib.parse.quote(prompt)
 
-    encoded_prompt = urllib.parse.quote(prompt)
+        models_to_try = [
+            "flux",
+            "flux-realism",
+            "turbo"
+        ]
 
-    models_to_try = [
-        "flux",
-        "flux-realism",
-        "turbo"
-    ]
+        headers = {
+            "User-Agent": "VirtualCompanionAI/4.0",
+        }
 
-    headers = {
-        "User-Agent": "VirtualCompanionAI/3.0",
-    }
+        image_saved = False
+        for model_name in models_to_try:
+            try:
+                api_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width={img_w}&height={img_h}&nologo=true&seed={scene_seed}&model={model_name}"
+                print(f"Generating photorealistic image ({model_name}, {img_w}x{img_h}) for {companion.name}...")
+                
+                response = requests.get(api_url, headers=headers, timeout=16)
+                if response.status_code == 200 and len(response.content) > 3000:
+                    with open(file_path, "wb") as f:
+                        f.write(response.content)
+                    print(f"Image ({model_name}) saved to {file_path} ({len(response.content)} bytes)")
+                    image_saved = True
+                    break
+            except Exception as err:
+                print(f"Model {model_name} attempt failed: {err}")
 
-    image_saved = False
-    for model_name in models_to_try:
-        try:
-            api_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width={img_w}&height={img_h}&nologo=true&seed={scene_seed}&model={model_name}"
-            print(f"Generating photorealistic image ({model_name}, {img_w}x{img_h}) for {companion.name}...")
-            
-            response = requests.get(api_url, headers=headers, timeout=16)
-            if response.status_code == 200 and len(response.content) > 3000:
-                with open(file_path, "wb") as f:
-                    f.write(response.content)
-                print(f"Image ({model_name}) saved to {file_path} ({len(response.content)} bytes)")
-                image_saved = True
-                break
-            else:
-                print(f"Model {model_name} returned status {response.status_code}, trying fallback...")
-        except Exception as err:
-            print(f"Model {model_name} attempt failed: {err}")
-
-    if not image_saved:
-        print("Image generation failed across all models.")
-        return None
+        if not image_saved:
+            print("Image generation failed across all fallback engines.")
+            return None
 
     # Record into history
     scene_label = custom_scene or (state_override.get("activity") if state_override else None) or (f"Outfit: {outfit_override}" if outfit_override else ("Selfie" if is_selfie else "Portrait"))

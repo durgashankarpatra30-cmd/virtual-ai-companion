@@ -21,4 +21,9 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY", "").strip().strip("\"'").strip()
 GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b").strip().strip("\"'").strip()
 if not GROQ_MODEL:
     GROQ_MODEL = "openai/gpt-oss-120b"
+
+# High Quality Image Generation Keys (ChatGPT / DALL-E 3 & Gemini Imagen 3)
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "").strip().strip("\"'").strip()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip().strip("\"'").strip()
+TOGETHER_API_KEY = os.getenv("TOGETHER_API_KEY", "").strip().strip("\"'").strip()
+HF_TOKEN = os.getenv("HF_TOKEN", "").strip().strip("\"'").strip()
