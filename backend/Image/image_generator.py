@@ -93,8 +93,8 @@ def generate_companion_image(
     user_id: str = "default_user",
 ):
     """
-    Generates a photorealistic HD image using Flux Realism / Flux AI models.
-    Supports full-body dress framing (768x1024), maintaining character likeness and outfits.
+    Generates a photorealistic human image using state-of-the-art Flux models.
+    Uses waist-up medium portrait composition (768x768) to guarantee clear, gorgeous facial features and distinct outfits.
     """
     os.environ.pop("SSLKEYLOGFILE", None)
 
@@ -123,28 +123,8 @@ def generate_companion_image(
                 relationship_mode="friendship",
             )
 
-    # Dynamic framing determination
-    has_outfit = bool(outfit_override and str(outfit_override).strip())
-    if framing is None:
-        if is_avatar:
-            framing = "headshot"
-        elif is_selfie:
-            framing = "selfie"
-        elif has_outfit:
-            framing = "medium_full"
-        else:
-            framing = "medium"
-
-    # Set optimal aspect ratio based on framing
-    if is_avatar:
-        img_w = width or 512
-        img_h = height or 512
-    elif framing in ["full_body", "medium_full"] or has_outfit:
-        img_w = width or 768
-        img_h = height or 1024  # 3:4 portrait for full dress & outfit display
-    else:
-        img_w = width or 768
-        img_h = height or 768
+    img_w = width or 768
+    img_h = height or 768
 
     # Build photographic prompt
     prompt = build_image_prompt(
@@ -163,21 +143,20 @@ def generate_companion_image(
     file_path = os.path.join(IMAGES_DIR, filename)
     relative_url = f"/static/images/{filename}"
 
-    # Character-specific base seed for facial consistency
+    # Consistent character base seed
     char_base_seed = get_character_seed(companion, user_id=user_id)
-    scene_seed = (char_base_seed + (int(time.time()) % 200)) if not is_avatar else char_base_seed
+    scene_seed = (char_base_seed + (int(time.time()) % 150)) if not is_avatar else char_base_seed
 
     encoded_prompt = urllib.parse.quote(prompt)
 
-    # Multi-tier state-of-the-art models for photorealism
     models_to_try = [
-        "flux-realism",
         "flux",
+        "flux-realism",
         "turbo"
     ]
 
     headers = {
-        "User-Agent": "VirtualCompanionAI/2.0",
+        "User-Agent": "VirtualCompanionAI/3.0",
     }
 
     image_saved = False
@@ -186,8 +165,8 @@ def generate_companion_image(
             api_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width={img_w}&height={img_h}&nologo=true&seed={scene_seed}&model={model_name}"
             print(f"Generating photorealistic image ({model_name}, {img_w}x{img_h}) for {companion.name}...")
             
-            response = requests.get(api_url, headers=headers, timeout=12)
-            if response.status_code == 200 and len(response.content) > 2000:
+            response = requests.get(api_url, headers=headers, timeout=16)
+            if response.status_code == 200 and len(response.content) > 3000:
                 with open(file_path, "wb") as f:
                     f.write(response.content)
                 print(f"Image ({model_name}) saved to {file_path} ({len(response.content)} bytes)")

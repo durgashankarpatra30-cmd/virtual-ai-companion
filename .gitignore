@@ -32,4 +32,7 @@ data/users/
 backend/static/audio/user_recordings/
 backend/static/audio/speech_*.mp3
 backend/static/images/companion_*.jpg
+backend/test_*.jpg
+backend/out_*.jpg
 backend/test_audio.mp3
+backend/test_*.py

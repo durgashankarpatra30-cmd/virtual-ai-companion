@@ -60,7 +60,7 @@ def get_character_seed(companion, user_id: str = "default_user") -> int:
     """Generates a stable deterministic seed for the character to maintain recognizable facial likeness."""
     name = getattr(companion, "name", "Companion")
     gender = getattr(companion, "gender", "Female")
-    combined = f"{user_id}_{name}_{gender}_photoreal_v2"
+    combined = f"{user_id}_{name}_{gender}_photoreal_v3"
     return int(hashlib.md5(combined.encode("utf-8")).hexdigest(), 16) % 900000 + 100000
 
 
@@ -82,101 +82,67 @@ def build_character_prompt(appearance, companion, outfit_override=None, framing=
     default_hair = (
         {"color": "dark brown", "style": "clean textured modern cut", "length": "short"}
         if is_male else
-        {"color": "natural black", "style": "straight with soft natural layers", "length": "long"}
+        {"color": "shiny black", "style": "long straight silky", "length": "long"}
     )
     
     hair = appearance.get("hair", default_hair)
     eyes = appearance.get("eyes", {"color": "deep expressive brown", "shape": "natural lifelike"})
-    face = appearance.get("face", {"face_shape": "defined masculine jawline" if is_male else "soft natural symmetry"})
+    face = appearance.get("face", {"face_shape": "defined masculine jawline" if is_male else "gorgeous soft natural facial symmetry"})
 
     skin_tone = appearance.get("skin_tone", "Fair")
-    body_type = appearance.get("body_type", "Athletic" if is_male else "Slim natural")
 
-    # Outfit customization & Full-body framing
+    # Outfit customization: cleanly isolated without conflicting clothes
     if outfit_override and str(outfit_override).strip():
         clean_outfit = str(outfit_override).strip()
         if "saree" in clean_outfit.lower() or "sari" in clean_outfit.lower():
-            clothing_text = f"Wearing a gorgeous, authentic {clean_outfit}, beautifully draped with intricate fabric texture, gold borders, and matching traditional accessories. Full attire clearly visible"
+            clothing_text = f"Wearing a gorgeous authentic {clean_outfit} with fine silk texture and elegant gold borders"
         elif "dress" in clean_outfit.lower() or "gown" in clean_outfit.lower():
-            clothing_text = f"Wearing an eye-catching, elegant {clean_outfit} tailored with realistic fabric texture, natural folds, and graceful drape. The full dress is prominently visible from shoulders to below knees"
+            clothing_text = f"Wearing a stunning, vibrant {clean_outfit} with elegant fabric texture and flattering fit"
         elif "suit" in clean_outfit.lower() or "blazer" in clean_outfit.lower():
-            clothing_text = f"Wearing a sharp, well-tailored {clean_outfit} with crisp collar and matching trousers. Full formal outfit prominently visible"
-        elif "bikini" in clean_outfit.lower() or "swimsuit" in clean_outfit.lower() or "swimwear" in clean_outfit.lower():
-            clothing_text = f"Wearing a stylish {clean_outfit}, beachwear style"
+            clothing_text = f"Wearing a sharp tailored {clean_outfit} with crisp collar"
+        elif "bikini" in clean_outfit.lower() or "swimsuit" in clean_outfit.lower():
+            clothing_text = f"Wearing a stylish {clean_outfit}"
         else:
-            clothing_text = f"Wearing {clean_outfit}, with the complete outfit and clothing clearly displayed in the frame"
+            clothing_text = f"Wearing {clean_outfit}"
     else:
         if rel_mode == "mentor":
-            default_clothing = (
-                {"top": "tailored navy blazer over crisp fitted shirt", "bottom": "dark trousers", "shoes": "leather dress shoes"}
-                if is_male else
-                {"top": "chic tailored blazer over elegant smart top", "bottom": "tailored slacks", "shoes": "minimalist heels"}
-            )
+            clothing_text = "Wearing a chic tailored blazer over an elegant smart shirt" if not is_male else "Wearing a sharp tailored navy blazer and shirt"
         else:
-            default_clothing = (
-                {"top": "stylish dark casual jacket over fitted tee", "bottom": "fitted dark jeans", "shoes": "clean white sneakers"}
-                if is_male else
-                {"top": "stylish cozy knit sweater", "bottom": "comfortable blue jeans", "shoes": "clean casual sneakers"}
-            )
-        clothing = appearance.get("clothing", default_clothing)
-        top = clothing.get("top", "stylish top")
-        bottom = clothing.get("bottom", "casual pants")
-        shoes = clothing.get("shoes", "clean sneakers")
-        clothing_text = f"Wearing {top}, {bottom}, and {shoes}"
+            clothing_text = "Wearing a stylish cozy top and comfortable casual attire" if not is_male else "Wearing a stylish dark jacket and casual tee"
 
-    hair_desc = f"{hair.get('length', '')} {hair.get('color', '')} {hair.get('style', '')} hair with natural shine and individual strands"
-    eye_desc = f"{eyes.get('color', 'brown')} eyes with sharp focus and subtle natural light reflections"
+    hair_desc = f"{hair.get('length', '')} {hair.get('color', '')} {hair.get('style', '')} hair"
+    eye_desc = f"{eyes.get('color', 'brown')} eyes with sharp pupil focus and natural light catchlights"
 
-    if framing in ["full_body", "medium_full"]:
-        frame_intro = f"Raw 8k color fashion photograph of a real, authentic {age}-year-old {gender_desc} named {name}. Medium full-body shot showing the full body and attire from head to knees."
-    elif framing == "selfie":
-        frame_intro = f"Raw 8k color candid selfie photograph of a real, authentic {age}-year-old {gender_desc} named {name} holding phone at arm's length."
-    else:
-        frame_intro = f"Raw 8k color portrait photograph of a real, authentic {age}-year-old {gender_desc} named {name}."
-
-    return f"""{frame_intro}
-Realistic human facial proportions, natural {skin_tone} skin tone with genuine skin texture and subtle natural pores.
-{face.get('face_shape', 'natural face')}, {eye_desc}, {hair_desc}.
+    return f"""stunning raw color photograph of a real, gorgeous {age}-year-old {gender_desc} named {name} with authentic delicate human skin texture, radiant warm smile, beautiful realistic {eye_desc}, and {hair_desc}.
 {clothing_text}.
-Maintain recognizable character facial likeness and authentic human anatomy."""
+waist-up medium portrait shot, clear detailed face and upper attire prominently in frame, looking directly at camera with natural expression."""
 
 
 def build_scene_prompt(state, custom_scene=None, is_selfie=False, outfit_override=None):
     if custom_scene and str(custom_scene).strip():
-        return f"Scene & Setting: {custom_scene.strip()}."
+        return f"in a {custom_scene.strip()}."
 
-    location = state.get("location", "modern cozy room")
-    time_of_day = state.get("time_of_day", "afternoon")
+    location = state.get("location", "modern cozy sunlit room")
+    time_of_day = state.get("time_of_day", "daytime")
 
     if is_selfie:
-        return f"Scene: Taking a smiling candid selfie, posing naturally inside {location}."
+        return f"taking a warm candid selfie inside {location}."
 
-    if outfit_override:
-        return f"Scene: Posing gracefully in a modern setting, standing naturally and showcasing the complete outfit during {time_of_day}."
-
-    activity = state.get("activity", "relaxing")
-    pose = state.get("pose", "standing naturally")
-    return f"Scene: The subject is {activity} at {location}, {pose} with natural relaxed posture."
+    return f"in a warm cozy {location} during {time_of_day}."
 
 
 def build_photography_specs(is_selfie=False, is_avatar=False, framing="medium"):
     if is_avatar:
-        return "Composition: Centered portrait headshot photograph, eye-level shot on 85mm f/1.4 lens, creamy soft background bokeh, natural studio lighting."
+        return "centered portrait headshot, eye-level framing on 50mm f/1.4 lens, soft creamy background bokeh, studio lighting."
 
     if is_selfie:
-        return "Camera angle: Front-facing mobile smartphone camera angle, eye-level perspective, sharp focus on subject, authentic casual photo."
+        return "front-facing smartphone camera angle, eye-level, sharp focus on subject, authentic casual photo."
 
-    if framing in ["full_body", "medium_full"]:
-        return "Framing: Medium full-body shot standing and posing, wide angle 50mm lens capturing the complete outfit from head to below knees, balanced cinematic lighting, full attire clearly in frame, soft depth of field."
-
-    return "Photography specs: Shot on Sony A7R V with 50mm lens, eye-level framing, authentic depth of field, balanced natural lighting, 8k raw photo."
+    return "shot on Sony A7R V with 50mm f/1.4 lens, natural depth of field, balanced soft natural lighting, 8k resolution, uncompressed raw color photo, photorealistic masterpiece."
 
 
 def build_quality_prompt(framing="medium"):
-    neg = "cropped headshot, close-up face only, cut off dress, cartoon, illustration, 3D CGI render, anime, drawing, painting, airbrushed plastic skin, deformed fingers, extra limbs, watermark, text, low quality: -1.0"
-    if framing in ["full_body", "medium_full"]:
-        return f"Ultra-photorealistic masterpiece, lifelike human skin texture, authentic fabric texture and drape, highly detailed, real photograph. (Negative prompt: {neg})"
-    return f"Ultra-photorealistic masterpiece, lifelike human skin texture, authentic lighting, highly detailed, real photograph. (Negative prompt: cartoon, illustration, 3D CGI render, anime, drawing, painting, airbrushed plastic skin, deformed fingers, extra limbs, watermark, text, low quality: -1.0)"
+    return "(Negative prompt: blurry face, distorted eyes, ghost face, doll, uncanny, pale ghost, airbrushed plastic skin, cartoon, 3D CGI render, illustration, anime, drawing, painting, deformed fingers, extra limbs, low resolution, bad anatomy: -1.0)"
 
 
 def build_image_prompt(
@@ -194,17 +160,6 @@ def build_image_prompt(
     state = dict(base_state)
     if state_override:
         state.update(state_override)
-
-    # Determine framing automatically if outfit or full body is requested
-    if framing is None:
-        if is_avatar:
-            framing = "headshot"
-        elif is_selfie:
-            framing = "selfie"
-        elif outfit_override and any(w in str(outfit_override).lower() for w in ["dress", "saree", "sari", "gown", "suit", "skirt", "pants", "bikini", "outfit", "coat", "jacket", "jeans"]):
-            framing = "medium_full"
-        else:
-            framing = "medium"
 
     character_part = build_character_prompt(appearance, companion, outfit_override=outfit_override, framing=framing)
     scene_part = build_scene_prompt(state, custom_scene=custom_scene, is_selfie=is_selfie, outfit_override=outfit_override)
