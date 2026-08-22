@@ -120,13 +120,39 @@ def generate_with_dalle(prompt: str, file_path: str) -> bool:
 
 
 # -------------------------------------------------------------
-# Google Imagen 3 Engine
+# Google Imagen & Gemini Image Generation Engine
 # -------------------------------------------------------------
 def generate_with_gemini_imagen(prompt: str, file_path: str) -> bool:
     if not GEMINI_API_KEY:
         return False
+    
+    # 1. Try Gemini 2.5/3.1 Flash Image generateContent
+    for model_name in ["gemini-2.5-flash-image", "gemini-3.1-flash-image"]:
+        try:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={GEMINI_API_KEY}"
+            headers = {"Content-Type": "application/json"}
+            payload = {
+                "contents": [{"parts": [{"text": f"Generate a stunning photorealistic 8k color photograph of a real human: {prompt}"}]}],
+                "generationConfig": {"responseModalities": ["IMAGE", "TEXT"]}
+            }
+            r = requests.post(url, headers=headers, json=payload, timeout=25)
+            if r.status_code == 200:
+                data = r.json()
+                candidates = data.get("candidates", [])
+                if candidates:
+                    parts = candidates[0].get("content", {}).get("parts", [])
+                    for p in parts:
+                        if "inlineData" in p:
+                            raw_bytes = base64.b64decode(p["inlineData"]["data"])
+                            with open(file_path, "wb") as f:
+                                f.write(raw_bytes)
+                            print(f"Successfully generated Google {model_name} image ({len(raw_bytes)} bytes)")
+                            return True
+        except Exception as e:
+            print(f"Google {model_name} attempt error: {e}")
+
+    # 2. Try Imagen 3 predict
     try:
-        print("Attempting generation with Google Imagen 3...")
         url = f"https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key={GEMINI_API_KEY}"
         headers = {"Content-Type": "application/json"}
         payload = {
@@ -137,7 +163,7 @@ def generate_with_gemini_imagen(prompt: str, file_path: str) -> bool:
                 "personGeneration": "ALLOW_ADULT"
             }
         }
-        r = requests.post(url, headers=headers, json=payload, timeout=30)
+        r = requests.post(url, headers=headers, json=payload, timeout=25)
         if r.status_code == 200:
             data = r.json()
             predictions = data.get("predictions", [])
@@ -145,12 +171,11 @@ def generate_with_gemini_imagen(prompt: str, file_path: str) -> bool:
                 raw_bytes = base64.b64decode(predictions[0]["bytesBase64Encoded"])
                 with open(file_path, "wb") as f:
                     f.write(raw_bytes)
-                print(f"Successfully generated and saved Google Imagen 3 image ({len(raw_bytes)} bytes)")
+                print(f"Successfully generated Google Imagen 3 image ({len(raw_bytes)} bytes)")
                 return True
-        else:
-            print(f"Google Imagen 3 returned status {r.status_code}: {r.text}")
     except Exception as e:
         print(f"Google Imagen 3 attempt error: {e}")
+
     return False
 
 
