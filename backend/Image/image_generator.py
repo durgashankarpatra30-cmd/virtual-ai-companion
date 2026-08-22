@@ -87,13 +87,14 @@ def generate_companion_image(
     outfit_override=None,
     is_selfie=False,
     is_avatar=False,
-    width=768,
-    height=768,
+    framing=None,
+    width=None,
+    height=None,
     user_id: str = "default_user",
 ):
     """
-    Generates a photorealistic HD image of the companion using Flux Realism / Flux AI models,
-    maintains character facial consistency, saves to static/images/, and records in history.
+    Generates a photorealistic HD image using Flux Realism / Flux AI models.
+    Supports full-body dress framing (768x1024), maintaining character likeness and outfits.
     """
     os.environ.pop("SSLKEYLOGFILE", None)
 
@@ -122,7 +123,30 @@ def generate_companion_image(
                 relationship_mode="friendship",
             )
 
-    # Build prompt with rich photorealism specifications
+    # Dynamic framing determination
+    has_outfit = bool(outfit_override and str(outfit_override).strip())
+    if framing is None:
+        if is_avatar:
+            framing = "headshot"
+        elif is_selfie:
+            framing = "selfie"
+        elif has_outfit:
+            framing = "medium_full"
+        else:
+            framing = "medium"
+
+    # Set optimal aspect ratio based on framing
+    if is_avatar:
+        img_w = width or 512
+        img_h = height or 512
+    elif framing in ["full_body", "medium_full"] or has_outfit:
+        img_w = width or 768
+        img_h = height or 1024  # 3:4 portrait for full dress & outfit display
+    else:
+        img_w = width or 768
+        img_h = height or 768
+
+    # Build photographic prompt
     prompt = build_image_prompt(
         companion,
         state_override=state_override,
@@ -130,6 +154,7 @@ def generate_companion_image(
         outfit_override=outfit_override,
         is_selfie=is_selfie,
         is_avatar=is_avatar,
+        framing=framing,
         user_id=user_id,
     )
 
@@ -138,14 +163,11 @@ def generate_companion_image(
     file_path = os.path.join(IMAGES_DIR, filename)
     relative_url = f"/static/images/{filename}"
 
-    # Use character-specific base seed for facial consistency across photos
+    # Character-specific base seed for facial consistency
     char_base_seed = get_character_seed(companion, user_id=user_id)
-    # Add small scene variation while retaining core face seed
-    scene_seed = (char_base_seed + (int(time.time()) % 100)) if not is_avatar else char_base_seed
+    scene_seed = (char_base_seed + (int(time.time()) % 200)) if not is_avatar else char_base_seed
 
     encoded_prompt = urllib.parse.quote(prompt)
-    img_w = 512 if is_avatar else min(width, 768)
-    img_h = 512 if is_avatar else min(height, 768)
 
     # Multi-tier state-of-the-art models for photorealism
     models_to_try = [
@@ -162,17 +184,17 @@ def generate_companion_image(
     for model_name in models_to_try:
         try:
             api_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width={img_w}&height={img_h}&nologo=true&seed={scene_seed}&model={model_name}"
-            print(f"Generating photorealistic image ({model_name}) for {companion.name} (seed: {scene_seed})...")
+            print(f"Generating photorealistic image ({model_name}, {img_w}x{img_h}) for {companion.name}...")
             
             response = requests.get(api_url, headers=headers, timeout=12)
             if response.status_code == 200 and len(response.content) > 2000:
                 with open(file_path, "wb") as f:
                     f.write(response.content)
-                print(f"Image ({model_name}) successfully saved to {file_path} ({len(response.content)} bytes)")
+                print(f"Image ({model_name}) saved to {file_path} ({len(response.content)} bytes)")
                 image_saved = True
                 break
             else:
-                print(f"Model {model_name} returned status {response.status_code}, trying next model...")
+                print(f"Model {model_name} returned status {response.status_code}, trying fallback...")
         except Exception as err:
             print(f"Model {model_name} attempt failed: {err}")
 
@@ -181,7 +203,7 @@ def generate_companion_image(
         return None
 
     # Record into history
-    scene_label = custom_scene or (state_override.get("activity") if state_override else None) or ("Selfie Portrait" if is_selfie else "Portrait")
+    scene_label = custom_scene or (state_override.get("activity") if state_override else None) or (f"Outfit: {outfit_override}" if outfit_override else ("Selfie" if is_selfie else "Portrait"))
     mood_label = (state_override.get("mood") if state_override else None) or "Happy"
 
     record = {
@@ -194,6 +216,7 @@ def generate_companion_image(
         "scene": scene_label,
         "mood": mood_label,
         "prompt": prompt,
+        "outfit": outfit_override,
         "is_avatar": is_avatar,
     }
 

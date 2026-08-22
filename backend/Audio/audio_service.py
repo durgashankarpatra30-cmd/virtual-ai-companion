@@ -188,14 +188,17 @@ async def generate_speech_async(text: str, voice_id: str = "en-US-AriaNeural", r
             print(f"gTTS fallback synthesis error: {gtts_err}")
             return None
 
-def generate_speech(text: str, voice_id: str = "en-US-AriaNeural", rate: str = "+0%", pitch: str = "+0Hz") -> dict:
+def generate_speech(text: str, voice_id: str = None, rate: str = "+0%", pitch: str = "+0Hz", gender: str = "Female", voice_speed: str = None, voice_pitch: str = None) -> dict:
     """Synchronous wrapper for generating speech with timeout protection."""
     if not text or not text.strip():
         return None
     try:
+        chosen_voice = voice_id or get_default_voice_for_gender(gender)
+        chosen_rate = voice_speed or rate or "+0%"
+        chosen_pitch = voice_pitch or pitch or "+0Hz"
         import concurrent.futures
         with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
-            future = pool.submit(asyncio.run, generate_speech_async(text, voice_id, rate, pitch))
+            future = pool.submit(asyncio.run, generate_speech_async(text, chosen_voice, chosen_rate, chosen_pitch))
             return future.result(timeout=8.0)
     except Exception as e:
         print(f"Speech generation notice: {e}")

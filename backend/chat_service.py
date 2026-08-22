@@ -17,21 +17,114 @@ from Image.image_generator import generate_companion_image
 from Audio.audio_service import generate_speech
 
 
-def is_image_request(message):
-    """Check if the user is asking for a photo, picture, or selfie."""
-    patterns = [
-        r"\b(send|show|give|take|share|post)\b.*?\b(photo|picture|pic|selfie|image|portrait)\b",
-        r"\b(photo|picture|pic|selfie|image|portrait)\b.*?\b(of you|please|now)\b",
-        r"\bwhat do you look like\b",
+def extract_image_intent(message: str):
+    """
+    Detects if the user wants an image/photo/selfie, and extracts requested outfit, scene, or attire.
+    Returns a dict: { 'is_image': bool, 'outfit': str|None, 'scene': str|None, 'is_selfie': bool, 'framing': str }
+    """
+    lowered = message.lower().strip()
+
+    # Image request trigger patterns
+    trigger_patterns = [
+        r"\b(send|show|give|take|share|post|click|generate)\b.*?\b(photo|picture|pic|selfie|image|portrait|snapshot|look|dress|saree|outfit)\b",
+        r"\b(photo|picture|pic|selfie|image|portrait|snapshot)\b.*?\b(of you|please|now|wearing|in)\b",
+        r"\b(photo|picture|pic|selfie|image)\b",
+        r"\bwhat (do you|are you) (look like|wearing)\b",
         r"\bshow me yourself\b",
         r"\bsend a selfie\b",
         r"\btake a selfie\b",
+        r"\bwear (a|the)\b",
+        r"\blook in (a|the)\b",
+        r"\b(in|wearing) (a |the )?(red|blue|black|white|pink|green|yellow|purple|floral|summer|traditional|cocktail|wedding)?\s*(dress|saree|sari|gown|suit|skirt|hoodie|bikini|swimsuit|jacket|coat|jeans|crop top|lehenga|kurti)\b",
     ]
-    lowered = message.lower()
-    for pattern in patterns:
-        if re.search(pattern, lowered):
-            return True
-    return False
+
+    is_image = False
+    for pat in trigger_patterns:
+        if re.search(pat, lowered):
+            is_image = True
+            break
+
+    if not is_image:
+        return {"is_image": False, "outfit": None, "scene": None, "is_selfie": False, "framing": "medium"}
+
+    is_selfie = bool(re.search(r"\b(selfie|close up|front camera)\b", lowered))
+
+    # Extract specific outfit mentions (e.g. "red dress", "blue saree", "black gown", "gym wear", "bikini")
+    outfit = None
+    outfit_match = re.search(
+        r"\b(in|wearing|put on|try on)\s+(a\s+|the\s+)?([a-z\s\-]+?\b(dress|saree|sari|gown|suit|skirt|hoodie|bikini|swimsuit|jacket|coat|jeans|crop top|lehenga|kurti|blazer|sweater|lingerie|attire|outfit))\b",
+        lowered
+    )
+    if outfit_match:
+        outfit = outfit_match.group(3).strip()
+    else:
+        # Check standalone outfit patterns like "red dress" or "black saree"
+        direct_outfit = re.search(
+            r"\b([a-z]+\s+(dress|saree|sari|gown|suit|skirt|hoodie|bikini|swimsuit|jacket|coat|lehenga|kurti))\b",
+            lowered
+        )
+        if direct_outfit:
+            outfit = direct_outfit.group(1).strip()
+
+    # Extract scene / setting mentions
+    scene = None
+    scene_match = re.search(
+        r"\b(at|in|on|near)\s+(the\s+|a\s+)?(beach|park|cafe|coffee shop|restaurant|bedroom|kitchen|living room|gym|balcony|garden|pool|office|study|street|car)\b",
+        lowered
+    )
+    if scene_match:
+        scene = f"at the {scene_match.group(3).strip()}"
+
+    # Determine framing: outfit requests require medium_full so the dress/clothing is fully visible
+    if outfit:
+        framing = "medium_full"
+    elif is_selfie:
+        framing = "selfie"
+    elif "full body" in lowered or "head to toe" in lowered:
+        framing = "full_body"
+    else:
+        framing = "medium"
+
+    return {
+        "is_image": True,
+        "outfit": outfit,
+        "scene": scene,
+        "is_selfie": is_selfie,
+        "framing": framing
+    }
+
+
+def sanitize_ai_response(response_text: str, companion_name: str, rel_mode: str, outfit_desc: str = None) -> str:
+    """Detects and cleans any robotic AI disclaimers if returned by LLMs."""
+    if not response_text:
+        return "Here is a photo I took for you! Hope you like how it looks 😊"
+
+    lowered = response_text.lower()
+    refusal_cues = [
+        "i am a chatbot", "i'm a chatbot", "i am an ai", "i'm an ai",
+        "as an ai", "as a language model", "cannot generate images",
+        "cannot take photos", "cannot take pictures", "cannot send photos",
+        "i don't have a physical body", "i do not have a physical body",
+        "cannot wear clothes", "i can not do this for you"
+    ]
+
+    for cue in refusal_cues:
+        if cue in lowered:
+            # Replace refusal with character-specific natural photo sharing reply
+            if rel_mode == "mentor":
+                if outfit_desc:
+                    return f"Here is the portrait in the {outfit_desc} as requested. I trust this meets your expectations. Let us continue our discussion."
+                return "Here is my recent professional portrait. Let us refocus on your key goals."
+            elif rel_mode == "lover":
+                if outfit_desc:
+                    return f"Here's a photo of me wearing that {outfit_desc}, just for you, my love! 🥰 Do you like how it looks on me? 📸"
+                return f"Just took this selfie for you, sweetheart! Hope it puts a smile on your face 🥰 How do I look?"
+            else:
+                if outfit_desc:
+                    return f"Check this out! Here's a photo in that {outfit_desc} 😄 How does it look?"
+                return f"Snapped this photo for you! Hope you like it 😊 What's up?"
+
+    return response_text
 
 
 def process_message(user_message, user_id="default_user", is_voice=False, user_audio_url=None):
@@ -96,16 +189,18 @@ def process_message(user_message, user_id="default_user", is_voice=False, user_a
     # Check if image generation requested
     # -------------------------------
     generated_image = None
-    if is_image_request(user_message):
+    image_intent = extract_image_intent(user_message)
+    outfit_desc = image_intent.get("outfit")
+
+    if image_intent.get("is_image"):
         try:
-            print(f"User '{user_id}' requested an image. Generating image for {companion.name}...")
-            scene_desc = "Taking a friendly selfie smiling at the camera" if companion.relationship_mode == "friendship" else (
-                "Professional portrait in a modern study" if companion.relationship_mode == "mentor" else
-                "Taking a cute selfie smiling at the camera for the user"
-            )
+            print(f"User '{user_id}' requested an image. Outfit: {outfit_desc}, Framing: {image_intent.get('framing')}")
             generated_image = generate_companion_image(
                 companion=companion,
-                custom_scene=scene_desc,
+                custom_scene=image_intent.get("scene"),
+                outfit_override=outfit_desc,
+                is_selfie=image_intent.get("is_selfie", False),
+                framing=image_intent.get("framing"),
                 is_avatar=False,
                 user_id=user_id,
             )
@@ -113,14 +208,18 @@ def process_message(user_message, user_id="default_user", is_voice=False, user_a
             print(f"Could not generate image in chat: {e}")
 
     # -------------------------------
-    # Build AI structured messages
+    # Build AI structured messages with immersion context
     # -------------------------------
-    augmented_message = user_message + (" [Note: You just sent a photo to the user. Mention it naturally in your response!]" if generated_image else "")
+    augmented_note = ""
+    if generated_image:
+        clothing_context = f"wearing {outfit_desc}" if outfit_desc else "looking great"
+        augmented_note = f"\n[SYSTEM NOTICE: You just sent a real photograph of yourself {clothing_context} to the user. Describe the photo warmly in character and ask what they think. NEVER say you are an AI or cannot send photos!]"
+
     messages = format_chat_messages(
         companion,
         user_memory,
         chat_history,
-        augmented_message,
+        user_message + augmented_note,
         relationship,
     )
 
@@ -128,18 +227,16 @@ def process_message(user_message, user_id="default_user", is_voice=False, user_a
     # Generate AI response
     # -------------------------------
     try:
-        response = generate_ai_message(
+        raw_response = generate_ai_message(
             messages,
             companion=companion,
             user_message=user_message,
             relationship=relationship,
         )
+        response = sanitize_ai_response(raw_response, companion.name, companion.relationship_mode, outfit_desc=outfit_desc)
     except Exception as e:
         print(f"AI Engine error: {e}")
-        if generated_image:
-            response = f"Here's a photo for you! Hope you like it 😊"
-        else:
-            response = f"I'm right here with you! Tell me what's on your mind, I'm listening."
+        response = sanitize_ai_response("", companion.name, companion.relationship_mode, outfit_desc=outfit_desc)
 
     # -------------------------------
     # Generate Voice / Audio Speech
@@ -148,34 +245,32 @@ def process_message(user_message, user_id="default_user", is_voice=False, user_a
     try:
         generated_audio = generate_speech(
             text=response,
+            gender=companion.gender,
             voice_id=companion.voice_id,
-            rate=companion.voice_speed,
-            pitch=companion.voice_pitch
+            voice_speed=companion.voice_speed,
+            voice_pitch=companion.voice_pitch,
         )
-    except Exception as audio_err:
-        print(f"Speech generation error: {audio_err}")
+    except Exception as e:
+        print(f"Audio generation skipped: {e}")
 
     # -------------------------------
-    # Save AI response
+    # Store assistant response in history
     # -------------------------------
     assistant_entry = {
         "role": "assistant",
         "message": response,
     }
     if generated_image:
-        assistant_entry["image"] = generated_image["url"]
-        assistant_entry["image_data"] = generated_image
+        assistant_entry["image"] = generated_image.get("url")
     if generated_audio and generated_audio.get("url"):
-        assistant_entry["audio"] = generated_audio["url"]
-        assistant_entry["audio_data"] = generated_audio
+        assistant_entry["audio"] = generated_audio.get("url")
 
     chat_history.append(assistant_entry)
     save_chat_history(chat_history, user_id=user_id)
 
     return {
         "reply": response,
-        "image": generated_image["url"] if generated_image else None,
-        "image_data": generated_image,
-        "audio": generated_audio["url"] if generated_audio else None,
-        "audio_data": generated_audio,
+        "image": generated_image.get("url") if generated_image else None,
+        "audio": generated_audio.get("url") if generated_audio else None,
+        "relationship": relationship,
     }
